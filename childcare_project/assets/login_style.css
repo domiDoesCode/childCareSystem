@@ -1,0 +1,113 @@
+/* General styling for the body */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Main container to center everything */
+main {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* Style the title */
+#title {
+    font-size: 32px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Login title styling */
+.login_title {
+    font-size: 28px;
+    color: #e6bbad;  /* Customize the color of the login text */
+    margin-bottom: 20px;
+}
+
+/* Input fields styling with added padding */
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;  /* Ensures padding is included in the width */
+}
+
+/* Styling for the buttons */
+.login_button,
+.register_button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: #e6bbad;  /* Button background matches the title color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+/* Button hover effect */
+.login_button:hover,
+.register_button:hover {
+    background-color: #d99c8a;  /* Darken button on hover */
+}
+
+/* Center the back button nicely */
+.back_button_container {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+/* Register button container */
+.register_button_container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Extra style for the back button to look consistent */
+#back_button {
+    width: auto;
+    background-color: #e6bbad;
+    padding: 10px 20px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#back_button:hover {
+    background-color: #d99c8a;
+}
+
+/* Adjust input and form alignment */
+label {
+    text-align: left;
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* Additional spacing */
+input[type="submit"] {
+    margin-top: 10px;
+}
+
+/* Add box-sizing to ensure inputs don't overflow */
+input {
+    box-sizing: border-box;
+}

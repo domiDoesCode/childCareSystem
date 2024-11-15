@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="assets/register_script.css">
+    <script src="assets/register_script.js" type="module"></script>
+</head>
+<body>
+    <main class="register_main">
+        <section class="register_section">
+            <h2 class="register_title">Create Your Account</h2>
+            <form id="register_form" method="POST" action="register.php">
+                <label for="email">Email:</label><br>
+                <input type="email" id="email" name="email" required><br><br>
+                
+                <label for="password">Password:</label><br>
+                <input type="password" id="password" name="password" required><br><br>
+                
+                <input type="submit" value="Register" class="regBtn">
+            </form>
+
+            <div class="button_container">
+                <!-- Go Back to Login button -->
+                <button id="go_back_login" class="backLgnBtn secondary_button">Go Back to Login</button>
+                
+                <!-- Go Back to Home button -->
+                <button id="go_back_home" class="backHomeBtn secondary_button">Go Back to Home</button>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

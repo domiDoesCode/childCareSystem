@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal</title>
+    <link rel="stylesheet" href="assets/portal_style.css">
+</head>
+<body>
+    <section class="menu_section" id="menu-section" style="display: none;">
+        <button class="menu-button" data-section="diet">Diet</button>
+        <button class="menu-button" data-section="activities">Activities</button>
+        <button class="menu-button" data-section="health">Health</button>
+        <button class="menu-button" data-section="nappy">Nappy</button>
+    </section>
+    
+    <section class="room_section" id="room-section">
+        <h2>Select a Room</h2>
+        <div id="room-list">Loading rooms...</div>
+    </section>
+    
+    <section class="data_section" id="data-section" style="display: none;">
+        <button id="back-to-rooms" style="display: block;">Back to Rooms</button>
+        <div id="children-list" class="children-list"></div>
+    </section>
+
+    <!-- Child Profile Modal -->
+    <div id="child-profile-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" id="close-profile-modal">&times;</span>
+            <h2 id="modal-child-name">Child Profile</h2>
+            <div id="profile-diet-section">
+                <h3>Diet History</h3>
+                <div class="history-list"></div>
+            </div>
+            <div id="profile-activities-section">
+                <h3>Activities History</h3>
+                <div class="history-list"></div>
+            </div>
+            <div id="profile-health-section">
+                <h3>Health History</h3>
+                <div class="history-list"></div>
+            </div>
+            <div id="profile-nappy-section">
+                <h3>Nappy History</h3>
+                <div class="history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-food-item-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-food-item-modal" class="close-button">&times;</span>
+            <h3>Add Food Item</h3>
+            <form>
+                <label for="food-item-name">Food Item Name:</label>
+                <input type="text" id="food-item-name" name="name" required>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="assets/portal_script.js" type="module"></script>
+</body>
+</html>

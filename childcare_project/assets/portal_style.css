@@ -1,0 +1,329 @@
+/* General styling for the body */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Room selection section */
+.room_section {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.room_section h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Room list buttons */
+#room-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+}
+
+#room-list button {
+    width: 100px;
+    height: 100px;
+    background-color: #e6bbad; /* Default color for room buttons */
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#room-list button:hover {
+    background-color: #d99c8a;
+    transform: scale(1.1); /* Slight zoom effect on hover */
+}
+
+/* Data section styling */
+.data_section {
+    width: 100%;
+    max-width: 800px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    /* height: 100vh; */
+    display: flex;
+}
+
+#data-section h2 {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Back buttons */
+#back-to-rooms, #back-to-children {
+    background-color: #e6bbad;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background-color 0.3s;
+}
+
+#back-to-rooms:hover, #back-to-children:hover {
+    background-color: #d99c8a;
+}
+
+/* Children list container */
+#children-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0;
+    margin: 20px 0;
+}
+
+/* Each child item as a card */
+.child-card {
+    background-color: #ffffff; /* White background for the card */
+    border: 1px solid #ddd; /* Light border for the card */
+    border-radius: 8px; /* Rounded corners */
+    padding: 20px; /* Space inside the card */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer; /* Pointer cursor on hover */
+    text-align: left; /* Align text to the left */
+    font-size: 16px; /* Font size for readability */
+}
+
+/* Hover effect for child cards */
+.child-card:hover {
+    transform: scale(1.03); /* Slight zoom effect on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+}
+
+/* Child name */
+.child-card .child-name {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #333; /* Dark text color */
+}
+
+/* Additional child details (if any) */
+.child-card .child-details {
+    color: #555; /* Subtle text color for details */
+    font-size: 14px;
+}
+
+
+/* Forms inside child data sections */
+#child-data form {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+#child-data h3 {
+    font-size: 18px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+#child-data label {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+    display: block;
+}
+
+#child-data input, #child-data select, #child-data textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+#child-data button[type="submit"] {
+    background-color: #e6bbad;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+#child-data button[type="submit"]:hover {
+    background-color: #d99c8a;
+}
+
+/* Section-specific colors (dynamic based on selected room) */
+.room-color-1 #data-section {
+    background-color: #f0e4d7;
+}
+
+.room-color-2 #data-section {
+    background-color: #d7eaf0;
+}
+
+.room-color-3 #data-section {
+    background-color: #f0d7e7;
+}
+
+/* Adjustments for mobile */
+@media (max-width: 600px) {
+    #room-list {
+        flex-direction: column;
+    }
+
+    #room-list button {
+        width: 80px;
+        height: 80px;
+    }
+
+    #child-data form {
+        padding: 10px;
+    }
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    color: #000;
+}
+.history-preview {
+    margin-top: 10px;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Style for forms */
+.child-form {
+    margin: 15px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.child-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.child-form input,
+.child-form textarea,
+.child-form select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.food-items-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.food-items-container select {
+    flex: 1;
+}
+
+.food-items-container button {
+    background-color: #e6bbad;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.food-items-container button:hover {
+    background-color: #d99c8a;
+}
+
+.child-form button[type="submit"] {
+    background-color: #e6bbad;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.child-form button[type="submit"]:hover {
+    background-color: #d99c8a;
+}
+
+/* History preview styling */
+.history-preview {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #555;
+}
