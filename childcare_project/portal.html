@@ -53,8 +53,18 @@
             <span id="close-food-item-modal" class="close-button">&times;</span>
             <h3>Add Food Item</h3>
             <form>
+                <!-- Food Item Name -->
                 <label for="food-item-name">Food Item Name:</label>
                 <input type="text" id="food-item-name" name="name" required>
+    
+                <!-- Meal Type Selection -->
+                <label for="meal-type-id">Select Meal Type (optional):</label>
+                <select id="meal-type-id" name="meal_type_id">
+                    <option value="">General (Available for All Meal Types)</option>
+                    <!-- Meal type options will be dynamically added here -->
+                </select>
+    
+                <!-- Submit Button -->
                 <button type="submit">Add</button>
             </form>
         </div>

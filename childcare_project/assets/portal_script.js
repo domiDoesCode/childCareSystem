@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    /**
+    /** 
      * Reset portal state to show room selection.
      */
     function resetPortalState() {
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     
         // Perform the POST request
-        fetch(`./api/${section}.php`, {
+        fetch(`./api/${section}.php?child_id=${childId}`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -349,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const mealTypeSelect = document.createElement('select');
         mealTypeSelect.name = 'meal_type';
+        mealTypeSelect.innerHTML = '<option value="">Select Meal Type</option>';
         form.appendChild(mealTypeSelect);
 
         // Fetch meal types from the backend
@@ -371,6 +372,15 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch((error) => console.error('Error fetching meal types:', error));
 
+        // Add event listener to load food items when a meal type is selected
+        mealTypeSelect.addEventListener('change', (e) => {
+            const mealTypeId = e.target.value;
+            if (mealTypeId) {
+                loadFoodItems(mealTypeId, foodItemsSelect);
+            } else {
+                foodItemsSelect.innerHTML = ''; // Clear food items if no meal type selected
+            }
+        });
 
         // Food Items Multi-Select
         const foodItemsLabel = document.createElement('label');
@@ -398,8 +408,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
-    function loadFoodItems(selectElement) {
-        fetch('./api/food_items.php', {
+    function loadFoodItems(mealTypeId, selectElement) {
+        
+        fetch(`./api/food_items.php?meal_type_id=${mealTypeId}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -429,10 +440,44 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.style.display = 'block';
     
         const form = modal.querySelector('form');
+        const mealTypeSelect = modal.querySelector('select[name="meal_type_id"]');
+    
+        // Populate meal types dynamically if not already populated
+        if (mealTypeSelect.options.length === 1) { // Only contains the "General" option
+            fetch('./api/meal_types.php', {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${token}` },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === 'success') {
+                        data.meal_types.forEach((mealType) => {
+                            const option = document.createElement('option');
+                            option.value = mealType.id;
+                            option.textContent = mealType.name;
+                            mealTypeSelect.appendChild(option);
+                        });
+                    } else {
+                        console.error('Failed to load meal types:', data.message);
+                    }
+                })
+                .catch((error) => console.error('Error fetching meal types:', error));
+        }
+    
+        // Handle form submission
         form.onsubmit = (e) => {
             e.preventDefault();
-
+    
             const formData = new FormData(form);
+            const selectedMealType = mealTypeSelect.value;
+
+            if (!selectedMealType) {
+                // Show confirmation for adding a general food item
+                if (!confirm('No meal type selected. This food item will be available for all meal types. Do you want to continue?')) {
+                    return;
+                }
+            }
+
             fetch('./api/food_items.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
@@ -442,7 +487,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then((data) => {
                     if (data.status === 'success') {
                         console.log('Food item added successfully');
-                        loadFoodItems(document.querySelector('select[name="food_items[]"]')); // Refresh the food items dropdown
+                        const foodItemSelect = document.querySelector('select[name="food_items[]"]');
+                        loadFoodItems(foodItemSelect); // Refresh the food items dropdown
                         modal.style.display = 'none'; // Close the modal
                     } else {
                         console.error('Failed to add food item:', data.message);
@@ -451,6 +497,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch((error) => console.error('Error adding food item:', error));
         };
     }
+    
 
     // Close modal logic
     document.getElementById('close-food-item-modal').onclick = function () {
