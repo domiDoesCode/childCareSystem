@@ -10,7 +10,9 @@ body {
     justify-content: center;
 }
 
+/* -------------------------------------------------------------- */
 /* Room selection section */
+/* -------------------------------------------------------------- */
 .room_section {
     text-align: center;
     margin: 20px 0;
@@ -28,6 +30,19 @@ body {
     flex-wrap: wrap;
     justify-content: center;
     gap: 15px;
+}
+
+/* Section-specific colors (dynamic based on selected room) */
+.room-color-1 #data-section {
+    background-color: #f0e4d7;
+}
+
+.room-color-2 #data-section {
+    background-color: #d7eaf0;
+}
+
+.room-color-3 #data-section {
+    background-color: #f0d7e7;
 }
 
 #room-list button {
@@ -50,7 +65,10 @@ body {
     transform: scale(1.1); /* Slight zoom effect on hover */
 }
 
-/* Data section styling */
+/* -------------------------------------------------------------- */
+/* Data section */
+/* -------------------------------------------------------------- */
+
 .data_section {
     width: 100%;
     max-width: 800px;
@@ -87,7 +105,30 @@ body {
     background-color: #d99c8a;
 }
 
-/* Children list container */
+/* -------------------------------------------------------------- */
+/* Menu section */
+/* -------------------------------------------------------------- */
+
+.menu_section button {
+    background-color: #b3d9ff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin: 8px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.menu_section button:hover {
+    background-color: #cce7ff;
+}
+
+/* -------------------------------------------------------------- */
+/* Children Data section */
+/* -------------------------------------------------------------- */
+
 #children-list {
     width: 100%;
     display: flex;
@@ -131,82 +172,10 @@ body {
 }
 
 
-/* Forms inside child data sections */
-#child-data form {
-    margin: 20px 0;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-}
+/* -------------------------------------------------------------- */
+/* Child Modal sections (Profile + Other sections) */
+/* -------------------------------------------------------------- */
 
-#child-data h3 {
-    font-size: 18px;
-    color: #444;
-    margin-bottom: 10px;
-}
-
-#child-data label {
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 5px;
-    display: block;
-}
-
-#child-data input, #child-data select, #child-data textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 14px;
-}
-
-#child-data button[type="submit"] {
-    background-color: #e6bbad;
-    color: white;
-    border: none;
-    padding: 10px;
-    font-size: 14px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin-top: 10px;
-}
-
-#child-data button[type="submit"]:hover {
-    background-color: #d99c8a;
-}
-
-/* Section-specific colors (dynamic based on selected room) */
-.room-color-1 #data-section {
-    background-color: #f0e4d7;
-}
-
-.room-color-2 #data-section {
-    background-color: #d7eaf0;
-}
-
-.room-color-3 #data-section {
-    background-color: #f0d7e7;
-}
-
-/* Adjustments for mobile */
-@media (max-width: 600px) {
-    #room-list {
-        flex-direction: column;
-    }
-
-    #room-list button {
-        width: 80px;
-        height: 80px;
-    }
-
-    #child-data form {
-        padding: 10px;
-    }
-}
 
 .modal {
     display: none;
@@ -303,7 +272,7 @@ body {
     background-color: #d99c8a;
 }
 
-.child-form button[type="submit"] {
+.child-card button {
     background-color: #e6bbad;
     color: white;
     border: none;
@@ -314,7 +283,7 @@ body {
     transition: background-color 0.3s ease;
 }
 
-.child-form button[type="submit"]:hover {
+.child-card button:hover {
     background-color: #d99c8a;
 }
 
@@ -326,4 +295,23 @@ body {
     border-radius: 4px;
     font-size: 12px;
     color: #555;
+}
+
+/* -------------------------------------------------------------- */
+/* Adjustments for mobile */
+/* -------------------------------------------------------------- */
+
+@media (max-width: 600px) {
+    #room-list {
+        flex-direction: column;
+    }
+
+    #room-list button {
+        width: 80px;
+        height: 80px;
+    }
+
+    #child-data form {
+        padding: 10px;
+    }
 }

@@ -240,7 +240,19 @@ document.addEventListener('DOMContentLoaded', function () {
     
             formData.append('meal_type_id', mealType);
             foodItems.forEach(item => formData.append('food_item_ids[]', item));
+        } else if (section === 'activities') {
+            const activityType = form.querySelector('[name="activity_type"]').value;
+            const activities = Array.from(form.querySelector('[name="activities[]"]').selectedOptions).map(opt => opt.value);
+    
+            if (!activityType || activities.length === 0) {
+                alert('Please select an activity type and at least one activity.');
+                return;
+            }
+    
+            formData.append('activity_type_id', activityType);
+            activities.forEach(activity => formData.append('activity_ids[]', activity));
         }
+        
     
         // Debugging: Log FormData contents
         console.log('Submitting the following data:');
@@ -334,6 +346,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('child-profile-modal');
         modal.style.display = 'none';
     };
+
+/*
+* ----------------------------------------------------------------------------
+* DIET
+* ----------------------------------------------------------------------------
+*/
 
     /**
      * Create inputs for diet section.
@@ -430,6 +448,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     console.warn('No food items found');
                 }
+
+                // Automatically set the meal type in the general form
+                const mealTypeSelect = selectElement.closest('form').querySelector('select[name="meal_type"]');
+                if (mealTypeSelect) {
+                    mealTypeSelect.value = mealTypeId; // Update the meal type selection
+                }
             })
             .catch((error) => console.error('Error fetching food items:', error));
     }
@@ -437,47 +461,55 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function showAddFoodItemModal() {
         const modal = document.getElementById('add-food-item-modal');
-        modal.style.display = 'block';
-    
         const form = modal.querySelector('form');
         const mealTypeSelect = modal.querySelector('select[name="meal_type_id"]');
+        const foodItemInput = modal.querySelector('input[name="name"]');
     
-        // Populate meal types dynamically if not already populated
-        if (mealTypeSelect.options.length === 1) { // Only contains the "General" option
-            fetch('./api/meal_types.php', {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` },
+        // Reset modal fields when opened
+        form.reset(); // Clears the form inputs
+        mealTypeSelect.innerHTML = '<option value="">General (available for all meal types)</option>'; // Reset meal types
+        modal.style.display = 'block';
+    
+        // Populate meal types dynamically
+        fetch('./api/meal_types.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    data.meal_types.forEach((mealType) => {
+                        const option = document.createElement('option');
+                        option.value = mealType.id;
+                        option.textContent = mealType.name;
+                        mealTypeSelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to load meal types:', data.message);
+                }
             })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.status === 'success') {
-                        data.meal_types.forEach((mealType) => {
-                            const option = document.createElement('option');
-                            option.value = mealType.id;
-                            option.textContent = mealType.name;
-                            mealTypeSelect.appendChild(option);
-                        });
-                    } else {
-                        console.error('Failed to load meal types:', data.message);
-                    }
-                })
-                .catch((error) => console.error('Error fetching meal types:', error));
-        }
+            .catch((error) => console.error('Error fetching meal types:', error));
     
         // Handle form submission
         form.onsubmit = (e) => {
             e.preventDefault();
     
             const formData = new FormData(form);
-            const selectedMealType = mealTypeSelect.value;
-
+            const selectedMealType = mealTypeSelect.value; // Meal type selected by user
+            const foodItemName = foodItemInput.value.trim();
+    
+            if (!foodItemName) {
+                alert('Please enter a food item name.');
+                return;
+            }
+    
             if (!selectedMealType) {
                 // Show confirmation for adding a general food item
                 if (!confirm('No meal type selected. This food item will be available for all meal types. Do you want to continue?')) {
                     return;
                 }
             }
-
+    
             fetch('./api/food_items.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
@@ -486,11 +518,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.status === 'success') {
-                        console.log('Food item added successfully');
-                        const foodItemSelect = document.querySelector('select[name="food_items[]"]');
-                        loadFoodItems(foodItemSelect); // Refresh the food items dropdown
-                        modal.style.display = 'none'; // Close the modal
+                        alert('Food item added successfully!');
+                        
+                        // Refresh the corresponding food items dropdown in the diet form
+                        const foodItemSelects = document.querySelectorAll('select[name="food_items[]"]');
+                        foodItemSelects.forEach((select) => {
+                            const mealTypeId = selectedMealType || select.closest('form').querySelector('select[name="meal_type"]').value;
+                            loadFoodItems(mealTypeId, select);
+                        });
+    
+                        // Reset and close the modal
+                        form.reset();
+                        modal.style.display = 'none';
                     } else {
+                        alert(`Failed to add food item: ${data.message}`);
                         console.error('Failed to add food item:', data.message);
                     }
                 })
@@ -498,29 +539,205 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
     
-
     // Close modal logic
     document.getElementById('close-food-item-modal').onclick = function () {
         document.getElementById('add-food-item-modal').style.display = 'none';
     };
 
+/*
+* ----------------------------------------------------------------------------
+* ACTIVITIES
+* ----------------------------------------------------------------------------
+*/
+
     /**
      * Create inputs for activities section.
      */
     function createActivityInputs(form) {
-        const activity = document.createElement('input');
-        activity.name = 'activity';
-        activity.placeholder = 'Activity';
-        activity.required = true; // Make it mandatory
-        form.appendChild(activity);
+        // Ensure we don't duplicate existing inputs
+        form.innerHTML = '';
 
-        const duration = document.createElement('input');
-        duration.name = 'duration';
-        duration.placeholder = 'Duration (minutes)';
-        duration.type = 'number'; // Ensure input is numeric
-        duration.required = true; // Make it mandatory
-        form.appendChild(duration);
+        // Activity Type Dropdown
+        const activityTypeLabel = document.createElement('label');
+        activityTypeLabel.textContent = 'Activity Type:';
+        form.appendChild(activityTypeLabel);
+
+        const activityTypeSelect = document.createElement('select');
+        activityTypeSelect.name = 'activity_type';
+        activityTypeSelect.innerHTML = '<option value="">Select Activity Type</option>';
+        form.appendChild(activityTypeSelect);
+
+        // Fetch activity types from the backend
+        fetch('./api/activity_types.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    data.activity_types.forEach((type) => {
+                        const option = document.createElement('option');
+                        option.value = type.id; // Use the activity type ID
+                        option.textContent = type.name; // Display the activity type name
+                        activityTypeSelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to fetch activity types:', data.message);
+                }
+            })
+            .catch((error) => console.error('Error fetching activity types:', error));
+
+        // Add event listener to load activities when an activity type is selected
+        activityTypeSelect.addEventListener('change', (e) => {
+            const activityTypeId = e.target.value;
+            if (activityTypeId) {
+                loadActivities(activityTypeId, activitiesSelect);
+            } else {
+                activitiesSelect.innerHTML = ''; // Clear activities if no activity type selected
+            }
+        });
+
+        // Activities Multi-Select
+        const activitiesLabel = document.createElement('label');
+        activitiesLabel.textContent = 'Activities:';
+        form.appendChild(activitiesLabel);
+
+        const activitiesContainer = document.createElement('div');
+        activitiesContainer.className = 'activities-container';
+
+        const activitiesSelect = document.createElement('select');
+        activitiesSelect.name = 'activities[]';
+        activitiesSelect.multiple = true; // Allow multi-selection
+        activitiesContainer.appendChild(activitiesSelect);
+
+        const addActivityButton = document.createElement('button');
+        addActivityButton.type = 'button';
+        addActivityButton.textContent = '+';
+        addActivityButton.addEventListener('click', showAddActivityModal);
+        activitiesContainer.appendChild(addActivityButton);
+
+        form.appendChild(activitiesContainer);
+
+        // Load existing activities
+        loadActivities(null, activitiesSelect);
     }
+
+    /**
+     * Fetch and load activities based on the activity type.
+     */
+    function loadActivities(activityTypeId, selectElement) {
+        fetch(`./api/activity_definitions.php?activity_type_id=${activityTypeId}`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                selectElement.innerHTML = ''; // Clear existing options
+
+                if (data.status === 'success' && data.activities.length > 0) {
+                    data.activities.forEach((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.id; // Use the activity ID
+                        option.textContent = item.name; // Display the activity name
+                        selectElement.appendChild(option);
+                    });
+                } else {
+                    console.warn('No activities found');
+                }
+            })
+            .catch((error) => console.error('Error fetching activities:', error));
+    }
+
+    /**
+     * Show the "Add Activity" modal.
+     */
+    function showAddActivityModal() {
+        const modal = document.getElementById('add-activity-modal');
+        const form = modal.querySelector('form');
+        const activityTypeSelect = modal.querySelector('select[name="activity_type_id"]');
+        const activityInput = modal.querySelector('input[name="name"]');
+
+        // Reset modal fields when opened
+        form.reset(); // Clears the form inputs
+        activityTypeSelect.innerHTML = '<option value="">General (available for all activity types)</option>'; // Reset activity types
+        modal.style.display = 'block';
+
+        // Populate activity types dynamically
+        fetch('./api/activity_types.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    data.activity_types.forEach((type) => {
+                        const option = document.createElement('option');
+                        option.value = type.id;
+                        option.textContent = type.name;
+                        activityTypeSelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to load activity types:', data.message);
+                }
+            })
+            .catch((error) => console.error('Error fetching activity types:', error));
+
+        // Handle form submission
+        form.onsubmit = (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const selectedActivityType = activityTypeSelect.value; // Activity type selected by user
+            const activityName = activityInput.value.trim();
+
+            if (!activityName) {
+                alert('Please enter an activity name.');
+                return;
+            }
+
+            if (!selectedActivityType) {
+                // Show confirmation for adding a general activity
+                if (!confirm('No activity type selected. This activity will be available for all activity types. Do you want to continue?')) {
+                    return;
+                }
+            }
+
+            fetch('./api/activity_definitions.php', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === 'success') {
+                        alert('Activity added successfully!');
+
+                        // Refresh the corresponding activities dropdown in the activities form
+                        const activitySelects = document.querySelectorAll('select[name="activities[]"]');
+                        activitySelects.forEach((select) => {
+                            const activityTypeId = selectedActivityType || select.closest('form').querySelector('select[name="activity_type"]').value;
+                            loadActivities(activityTypeId, select);
+                        });
+
+                        // Reset and close the modal
+                        form.reset();
+                        modal.style.display = 'none';
+                    } else {
+                        alert(`Failed to add activity: ${data.message}`);
+                        console.error('Failed to add activity:', data.message);
+                    }
+                })
+                .catch((error) => console.error('Error adding activity:', error));
+        };
+    }
+
+    // Close modal logic
+    document.getElementById('close-activity-modal').onclick = function () {
+        document.getElementById('add-activity-modal').style.display = 'none';
+    };
+
 
     /**
      * Create inputs for health section.
