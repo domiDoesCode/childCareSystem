@@ -93,6 +93,53 @@
             </form>
         </div>
     </div>
+
+    <div id="add-health-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-health-modal" class="close-button">&times;</span>
+            <h3>Add Health Entry</h3>
+            <form>
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" id="temperature" name="temperature" required>
+    
+                <label for="symptoms">Symptoms:</label>
+                <select id="symptoms" name="symptom_ids[]" multiple></select>
+                <button type="button" id="add-symptom-button">+</button>
+    
+                <label for="medications">Medications:</label>
+                <select id="medications" name="medication_ids[]" multiple></select>
+                <button type="button" id="add-medication-button">+</button>
+    
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="add-symptom-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-symptom-modal" class="close-button">&times;</span>
+            <h3>Add Symptom</h3>
+            <form>
+                <label for="symptom-name">Symptom Name:</label>
+                <input type="text" id="symptom-name" name="name" required>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-medication-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-medication-modal" class="close-button">&times;</span>
+            <h3>Add Medication</h3>
+            <form>
+                <label for="medication-name">Medication Name:</label>
+                <input type="text" id="medication-name" name="name" required>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+    
+
     
 
     <script src="assets/portal_script.js" type="module"></script>

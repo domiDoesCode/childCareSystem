@@ -247,10 +247,23 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!activityType || activities.length === 0) {
                 alert('Please select an activity type and at least one activity.');
                 return;
-            }
+            } 
     
             formData.append('activity_type_id', activityType);
             activities.forEach(activity => formData.append('activity_ids[]', activity));
+        } else if (section === 'health') {
+            const temperature = form.querySelector('[name="temperature"]').value.trim();
+            const symptoms = Array.from(form.querySelector('[name="symptoms[]"]').selectedOptions).map(opt => opt.value);
+            const medications = Array.from(form.querySelector('[name="medications[]"]').selectedOptions).map(opt => opt.value);
+        
+            if (!temperature || isNaN(temperature) || (symptoms.length === 0 && medications.length === 0)) {
+                alert('Please enter a valid temperature and select at least one symptom or medication.');
+                return;
+            }
+        
+            formData.append('temperature', temperature);
+            symptoms.forEach((symptom) => formData.append('symptom_ids[]', symptom));
+            medications.forEach((medication) => formData.append('medication_ids[]', medication));
         }
         
     
@@ -296,9 +309,9 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'diet':
                 return `Meal: ${entry.meal_type}, Food: ${entry.food_items}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
             case 'activities':
-                return `Activity: ${entry.activity}, Duration: ${entry.duration} mins, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
+                return `Activity Type: ${entry.activity_type}, Activity: ${entry.activities}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
             case 'health':
-                return `Temp: ${entry.temperature}°C, Symptoms: ${entry.symptoms || 'None'}, Medication: ${entry.medication_given || 'None'}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
+                return `Temp: ${entry.temperature}°C, Symptoms: ${entry.symptoms || 'None'}, Medication: ${entry.medications || 'None'}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
             case 'nappy':
                 return `Type: ${entry.nappy_type}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
             default:
@@ -738,29 +751,226 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('add-activity-modal').style.display = 'none';
     };
 
+/*
+* ----------------------------------------------------------------------------
+* ACTIVITIES
+* ----------------------------------------------------------------------------
+*/
 
-    /**
-     * Create inputs for health section.
-     */
-    function createHealthInputs(form) {
-        const temperature = document.createElement('input');
-        temperature.name = 'temperature';
-        temperature.placeholder = 'Temperature';
-        temperature.type = 'number'; // Ensure input is numeric
-        temperature.step = '0.1'; // Allow decimals
-        temperature.required = true; // Make it mandatory
-        form.appendChild(temperature);
+function createHealthInputs(form) {
+    // Clear existing inputs
+    form.innerHTML = '';
 
-        const symptoms = document.createElement('textarea');
-        symptoms.name = 'symptoms';
-        symptoms.placeholder = 'Symptoms';
-        form.appendChild(symptoms);
+    // Temperature Input
+    const temperatureLabel = document.createElement('label');
+    temperatureLabel.textContent = 'Temperature (°C):';
+    form.appendChild(temperatureLabel);
 
-        const medication = document.createElement('textarea');
-        medication.name = 'medication_given';
-        medication.placeholder = 'Medication Given';
-        form.appendChild(medication);
-    }
+    const temperatureInput = document.createElement('input');
+    temperatureInput.name = 'temperature';
+    temperatureInput.type = 'number';
+    temperatureInput.step = '0.1'; // Allow decimals
+    temperatureInput.required = true;
+    form.appendChild(temperatureInput);
+
+    // Symptoms Multi-Select
+    const symptomsLabel = document.createElement('label');
+    symptomsLabel.textContent = 'Symptoms:';
+    form.appendChild(symptomsLabel);
+
+    const symptomsContainer = document.createElement('div');
+    symptomsContainer.className = 'symptoms-container';
+
+    const symptomsSelect = document.createElement('select');
+    symptomsSelect.name = 'symptoms[]';
+    symptomsSelect.multiple = true; // Allow multi-selection
+    symptomsContainer.appendChild(symptomsSelect);
+
+    const addSymptomButton = document.createElement('button');
+    addSymptomButton.type = 'button';
+    addSymptomButton.textContent = '+';
+    addSymptomButton.addEventListener('click', showAddSymptomModal);
+    symptomsContainer.appendChild(addSymptomButton);
+
+    form.appendChild(symptomsContainer);
+
+    // Load existing symptoms
+    loadSymptoms(symptomsSelect);
+
+    // Medications Multi-Select
+    const medicationsLabel = document.createElement('label');
+    medicationsLabel.textContent = 'Medications:';
+    form.appendChild(medicationsLabel);
+
+    const medicationsContainer = document.createElement('div');
+    medicationsContainer.className = 'medications-container';
+
+    const medicationsSelect = document.createElement('select');
+    medicationsSelect.name = 'medications[]';
+    medicationsSelect.multiple = true; // Allow multi-selection
+    medicationsContainer.appendChild(medicationsSelect);
+
+    const addMedicationButton = document.createElement('button');
+    addMedicationButton.type = 'button';
+    addMedicationButton.textContent = '+';
+    addMedicationButton.addEventListener('click', showAddMedicationModal);
+    medicationsContainer.appendChild(addMedicationButton);
+
+    form.appendChild(medicationsContainer);
+
+    // Load existing medications
+    loadMedications(medicationsSelect);
+
+    // Form Submission
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        submitForm(form, 'health');
+    };
+
+}
+
+/**
+ * Load symptoms into the dropdown.
+ */
+function loadSymptoms(selectElement) {
+    fetch('./api/symptoms.php', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            selectElement.innerHTML = ''; // Clear existing options
+            if (data.status === 'success' && data.symptoms.length > 0) {
+                data.symptoms.forEach((symptom) => {
+                    const option = document.createElement('option');
+                    option.value = symptom.id; // Use symptom ID
+                    option.textContent = symptom.name; // Display symptom name
+                    selectElement.appendChild(option);
+                });
+            } else {
+                console.warn('No symptoms found.');
+            }
+        })
+        .catch((error) => console.error('Error fetching symptoms:', error));
+}
+
+/**
+ * Load medications into the dropdown.
+ */
+function loadMedications(selectElement) {
+    fetch('./api/medications.php', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            selectElement.innerHTML = ''; // Clear existing options
+            if (data.status === 'success' && data.medications.length > 0) {
+                data.medications.forEach((medication) => {
+                    const option = document.createElement('option');
+                    option.value = medication.id; // Use medication ID
+                    option.textContent = medication.name; // Display medication name
+                    selectElement.appendChild(option);
+                });
+            } else {
+                console.warn('No medications found.');
+            }
+        })
+        .catch((error) => console.error('Error fetching medications:', error));
+}
+
+
+function showAddSymptomModal() {
+    const modal = document.getElementById('add-symptom-modal');
+    const form = modal.querySelector('form');
+    const symptomInput = modal.querySelector('input[name="name"]');
+
+    // Reset modal fields when opened
+    form.reset();
+    modal.style.display = 'block';
+
+    // Handle form submission
+    form.onsubmit = (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const symptomName = symptomInput.value.trim();
+
+        if (!symptomName) {
+            alert('Please enter a symptom name.');
+            return;
+        }
+
+        fetch('./api/symptoms.php', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    alert('Symptom added successfully!');
+                    
+                    // Refresh the symptoms dropdown in the health form
+                    const symptomSelects = document.querySelectorAll('select[name="symptoms[]"]');
+                    symptomSelects.forEach((select) => loadSymptoms(select));
+                    
+                    // Reset and close the modal
+                    form.reset();
+                    modal.style.display = 'none';
+                } else {
+                    alert(`Failed to add symptom: ${data.message}`);
+                }
+            })
+            .catch((error) => console.error('Error adding symptom:', error));
+    };
+}
+
+function showAddMedicationModal() {
+    const modal = document.getElementById('add-medication-modal');
+    const form = modal.querySelector('form');
+    const medicationInput = modal.querySelector('input[name="name"]');
+
+    // Reset modal fields when opened
+    form.reset();
+    modal.style.display = 'block';
+
+    // Handle form submission
+    form.onsubmit = (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const medicationName = medicationInput.value.trim();
+
+        if (!medicationName) {
+            alert('Please enter a medication name.');
+            return;
+        }
+
+        fetch('./api/medications.php', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    alert('Medication added successfully!');
+                    
+                    // Refresh the medications dropdown in the health form
+                    const medicationSelects = document.querySelectorAll('select[name="medications[]"]');
+                    medicationSelects.forEach((select) => loadMedications(select));
+                    
+                    // Reset and close the modal
+                    form.reset();
+                    modal.style.display = 'none';
+                } else {
+                    alert(`Failed to add medication: ${data.message}`);
+                }
+            })
+            .catch((error) => console.error('Error adding medication:', error));
+    };
+}
 
     /**
      * Create inputs for nappy section.
