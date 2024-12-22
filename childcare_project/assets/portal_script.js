@@ -202,6 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
             .then((response) => response.json())
             .then((data) => {
+                console.log(`Fetched ${section} data:`, data); // Debugging response
                 historyPreview.innerHTML = ''; // Clear previous entries
                 if (data[section] && data[section].length > 0) {
                     data[section].slice(0, 2).forEach((entry) => {
@@ -264,6 +265,15 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('temperature', temperature);
             symptoms.forEach((symptom) => formData.append('symptom_ids[]', symptom));
             medications.forEach((medication) => formData.append('medication_ids[]', medication));
+        } if (section === 'nappy') {
+            const nappyTypeId = form.querySelector('[name="nappy_type"]').value; // Retrieve the ID
+        
+            if (!nappyTypeId) {
+                alert('Please select a nappy type.');
+                return;
+            }
+        
+            formData.append('nappy_type', nappyTypeId); // Append as nappy_type_id
         }
         
     
@@ -976,19 +986,37 @@ function showAddMedicationModal() {
      * Create inputs for nappy section.
      */
     function createNappyInputs(form) {
-        const nappyType = document.createElement('select');
-        nappyType.name = 'nappy_type';
-        nappyType.required = true; // Make it mandatory
-
-        // Add dropdown options
-        ['Select Nappy Type', 'Wet', 'Soiled', 'Mixed'].forEach((optionText) => {
-            const option = document.createElement('option');
-            option.value = optionText.toLowerCase();
-            option.textContent = optionText;
-            nappyType.appendChild(option);
-        });
-
-        form.appendChild(nappyType);
+        form.innerHTML = ''; // Clear existing inputs
+    
+        const nappyTypeLabel = document.createElement('label');
+        nappyTypeLabel.textContent = 'Nappy Type:';
+        form.appendChild(nappyTypeLabel);
+    
+        const nappyTypeSelect = document.createElement('select');
+        nappyTypeSelect.name = 'nappy_type'; // Matches the name in the form submission
+        nappyTypeSelect.innerHTML = '<option value="">Select Nappy Type</option>'; // Default option
+    
+        // Load nappy types dynamically from the backend
+        fetch('./api/nappy_types.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    data.nappy_types.forEach((type) => {
+                        const option = document.createElement('option');
+                        option.value = type.id; // Use the ID as the value
+                        option.textContent = type.name; // Display the name
+                        nappyTypeSelect.appendChild(option);
+                    });
+                } else {
+                    console.error('Failed to fetch nappy types:', data.message);
+                }
+            })
+            .catch((error) => console.error('Error fetching nappy types:', error));
+    
+        form.appendChild(nappyTypeSelect);
     }
 
 });
