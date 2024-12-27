@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Fetch and display rooms.
      */
+    showLoadingSpinner(); // Show the spinner before starting the fetch
     fetch('./api/room_selection.php', {
         method: 'GET',
         headers: {
@@ -47,7 +48,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 roomList.appendChild(roomButton);
             });
         })
-        .catch((error) => console.error('Error fetching rooms:', error));
+        .catch((error) => console.error('Error fetching rooms:', error))
+        .finally(() => {
+            hideLoadingSpinner(); // Always hide the spinner after submission
+        });
 
     /**
      * Load and display children for a room.
@@ -62,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resetPortalState();
         });
 
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`./api/children.php?room_id=${roomId}`, {
             method: 'GET',
             headers: {
@@ -76,7 +81,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     createChildForm(child);
                 });
             })
-            .catch((error) => console.error('Error loading children:', error));
+            .catch((error) => console.error('Error loading children:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     }
 
     /**
@@ -96,6 +104,9 @@ document.addEventListener('DOMContentLoaded', function () {
         viewProfileButton.textContent = 'View Profile';
         viewProfileButton.addEventListener('click', () => showChildProfile(child.id, child.name));
         childCard.appendChild(viewProfileButton);
+
+        fadeInElement(childCard); // Apply fade-in animation to the card
+        document.querySelector('#children-list').appendChild(childCard);
 
         // Attach child ID to the card for later reference
         childCard.dataset.childId = child.id;
@@ -169,6 +180,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // Add the form to the child card
             childCard.appendChild(form);
 
+            // Add fade-in effect to the form
+            fadeInElement(form);
+
             // Add recent entries preview
             const historyPreview = document.createElement('div');
             historyPreview.className = 'history-preview';
@@ -196,6 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Fetch and display recent entries for a specific section and child.
      */
     function fetchRecentEntries(section, childId, historyPreview) {
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`./api/${section}.php?child_id=${childId}`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -214,7 +229,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     historyPreview.textContent = 'No recent entries available.';
                 }
             })
-            .catch((error) => console.error(`Error fetching ${section} recent entries:`, error));
+            .catch((error) => console.error(`Error fetching ${section} recent entries:`, error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     }
 
 
@@ -283,7 +301,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log(`${key}: ${value}`);
         }
     
-        // Perform the POST request
+
+        // Perform the POST requestž
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`./api/${section}.php?child_id=${childId}`, {
             method: 'POST',
             headers: {
@@ -309,11 +329,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error(data.error);
                 }
             })
-            .catch((error) => console.error(`Error submitting ${section} data:`, error));
+            .catch((error) => console.error(`Error submitting ${section} data:`, error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     }
     
-
-
     function formatEntry(section, entry) {
         switch (section) {
             case 'diet':
@@ -340,6 +361,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalChildName.textContent = `Profile of ${childName}`;
 
         ['diet', 'activities', 'health', 'nappy'].forEach((section) => {
+            showLoadingSpinner(); // Show the spinner before starting the fetch
             fetch(`./api/${section}.php?child_id=${childId}`, {
                 method: 'GET',
                 headers: { Authorization: `Bearer ${token}` },
@@ -359,7 +381,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         historyList.innerHTML = '<p>No history available.</p>';
                     }
                 })
-                .catch((error) => console.error(`Error fetching ${section} history:`, error));
+                .catch((error) => console.error(`Error fetching ${section} history:`, error))
+                .finally(() => {
+                    hideLoadingSpinner(); // Always hide the spinner after submission
+                });
         });
 
         modal.style.display = 'block';
@@ -394,6 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.appendChild(mealTypeSelect);
 
         // Fetch meal types from the backend
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/meal_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -411,7 +437,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error('Failed to fetch meal types:', data.message);
                 }
             })
-            .catch((error) => console.error('Error fetching meal types:', error));
+            .catch((error) => console.error('Error fetching meal types:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
 
         // Add event listener to load food items when a meal type is selected
         mealTypeSelect.addEventListener('change', (e) => {
@@ -451,6 +480,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function loadFoodItems(mealTypeId, selectElement) {
         
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`./api/food_items.php?meal_type_id=${mealTypeId}`, {
             method: 'GET',
             headers: {
@@ -478,7 +508,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     mealTypeSelect.value = mealTypeId; // Update the meal type selection
                 }
             })
-            .catch((error) => console.error('Error fetching food items:', error));
+            .catch((error) => console.error('Error fetching food items:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     }
     
 
@@ -487,6 +520,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const form = modal.querySelector('form');
         const mealTypeSelect = modal.querySelector('select[name="meal_type_id"]');
         const foodItemInput = modal.querySelector('input[name="name"]');
+
+        // Add fade-in effect to the form
+        fadeInElement(modal);
     
         // Reset modal fields when opened
         form.reset(); // Clears the form inputs
@@ -494,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.style.display = 'block';
     
         // Populate meal types dynamically
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/meal_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -511,7 +548,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error('Failed to load meal types:', data.message);
                 }
             })
-            .catch((error) => console.error('Error fetching meal types:', error));
+            .catch((error) => console.error('Error fetching meal types:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     
         // Handle form submission
         form.onsubmit = (e) => {
@@ -533,6 +573,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
     
+            showLoadingSpinner(); // Show the spinner before starting the fetch
             fetch('./api/food_items.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
@@ -558,7 +599,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.error('Failed to add food item:', data.message);
                     }
                 })
-                .catch((error) => console.error('Error adding food item:', error));
+                .catch((error) => console.error('Error adding food item:', error))
+                .finally(() => {
+                    hideLoadingSpinner(); // Always hide the spinner after submission
+                });
         };
     }
     
@@ -591,6 +635,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.appendChild(activityTypeSelect);
 
         // Fetch activity types from the backend
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/activity_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -608,7 +653,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error('Failed to fetch activity types:', data.message);
                 }
             })
-            .catch((error) => console.error('Error fetching activity types:', error));
+            .catch((error) => console.error('Error fetching activity types:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
 
         // Add event listener to load activities when an activity type is selected
         activityTypeSelect.addEventListener('change', (e) => {
@@ -649,6 +697,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Fetch and load activities based on the activity type.
      */
     function loadActivities(activityTypeId, selectElement) {
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`./api/activity_definitions.php?activity_type_id=${activityTypeId}`, {
             method: 'GET',
             headers: {
@@ -670,7 +719,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.warn('No activities found');
                 }
             })
-            .catch((error) => console.error('Error fetching activities:', error));
+            .catch((error) => console.error('Error fetching activities:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     }
 
     /**
@@ -682,12 +734,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const activityTypeSelect = modal.querySelector('select[name="activity_type_id"]');
         const activityInput = modal.querySelector('input[name="name"]');
 
+        // Add fade-in effect to the form
+        fadeInElement(modal);
+
         // Reset modal fields when opened
         form.reset(); // Clears the form inputs
         activityTypeSelect.innerHTML = '<option value="">General (available for all activity types)</option>'; // Reset activity types
         modal.style.display = 'block';
 
         // Populate activity types dynamically
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/activity_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -705,7 +761,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error('Failed to load activity types:', data.message);
                 }
             })
-            .catch((error) => console.error('Error fetching activity types:', error));
+            .catch((error) => console.error('Error fetching activity types:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
 
         // Handle form submission
         form.onsubmit = (e) => {
@@ -727,6 +786,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
+            showLoadingSpinner(); // Show the spinner before starting the fetch
             fetch('./api/activity_definitions.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
@@ -752,7 +812,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.error('Failed to add activity:', data.message);
                     }
                 })
-                .catch((error) => console.error('Error adding activity:', error));
+                .catch((error) => console.error('Error adding activity:', error))
+                .finally(() => {
+                    hideLoadingSpinner(); // Always hide the spinner after submission
+                });
         };
     }
 
@@ -843,6 +906,7 @@ function createHealthInputs(form) {
  * Load symptoms into the dropdown.
  */
 function loadSymptoms(selectElement) {
+    showLoadingSpinner(); // Show the spinner before starting the fetch
     fetch('./api/symptoms.php', {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
@@ -861,13 +925,17 @@ function loadSymptoms(selectElement) {
                 console.warn('No symptoms found.');
             }
         })
-        .catch((error) => console.error('Error fetching symptoms:', error));
+        .catch((error) => console.error('Error fetching symptoms:', error))
+        .finally(() => {
+            hideLoadingSpinner(); // Always hide the spinner after submission
+        });
 }
 
 /**
  * Load medications into the dropdown.
  */
 function loadMedications(selectElement) {
+    showLoadingSpinner(); // Show the spinner before starting the fetch
     fetch('./api/medications.php', {
         method: 'GET',
         headers: { Authorization: `Bearer ${token}` },
@@ -886,7 +954,10 @@ function loadMedications(selectElement) {
                 console.warn('No medications found.');
             }
         })
-        .catch((error) => console.error('Error fetching medications:', error));
+        .catch((error) => console.error('Error fetching medications:', error))
+        .finally(() => {
+            hideLoadingSpinner(); // Always hide the spinner after submission
+        });
 }
 
 
@@ -894,6 +965,9 @@ function showAddSymptomModal() {
     const modal = document.getElementById('add-symptom-modal');
     const form = modal.querySelector('form');
     const symptomInput = modal.querySelector('input[name="name"]');
+
+    // Add fade-in effect to the form
+    fadeInElement(modal);
 
     // Reset modal fields when opened
     form.reset();
@@ -911,6 +985,7 @@ function showAddSymptomModal() {
             return;
         }
 
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/symptoms.php', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
@@ -932,7 +1007,15 @@ function showAddSymptomModal() {
                     alert(`Failed to add symptom: ${data.message}`);
                 }
             })
-            .catch((error) => console.error('Error adding symptom:', error));
+            .catch((error) => console.error('Error adding symptom:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
+    };
+
+        // Close modal logic
+        document.getElementById('close-symptom-modal').onclick = function () {
+        document.getElementById('add-symptom-modal').style.display = 'none';
     };
 }
 
@@ -940,6 +1023,9 @@ function showAddMedicationModal() {
     const modal = document.getElementById('add-medication-modal');
     const form = modal.querySelector('form');
     const medicationInput = modal.querySelector('input[name="name"]');
+
+    // Add fade-in effect to the form
+    fadeInElement(modal);
 
     // Reset modal fields when opened
     form.reset();
@@ -957,6 +1043,7 @@ function showAddMedicationModal() {
             return;
         }
 
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/medications.php', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
@@ -978,13 +1065,22 @@ function showAddMedicationModal() {
                     alert(`Failed to add medication: ${data.message}`);
                 }
             })
-            .catch((error) => console.error('Error adding medication:', error));
+            .catch((error) => console.error('Error adding medication:', error))
+            .finally(() => {
+                hideLoadingSpinner(); // Always hide the spinner after submission
+            });
     };
+
+        // Close modal logic
+        document.getElementById('close-medication-modal').onclick = function () {
+        document.getElementById('add-medication-modal').style.display = 'none';
+    };
+
 }
 
-    /**
-     * Create inputs for nappy section.
-     */
+    // /**
+    //  * Create inputs for nappy section.
+    //  */
     function createNappyInputs(form) {
         form.innerHTML = ''; // Clear existing inputs
     
@@ -997,6 +1093,7 @@ function showAddMedicationModal() {
         nappyTypeSelect.innerHTML = '<option value="">Select Nappy Type</option>'; // Default option
     
         // Load nappy types dynamically from the backend
+        showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/nappy_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -1014,9 +1111,81 @@ function showAddMedicationModal() {
                     console.error('Failed to fetch nappy types:', data.message);
                 }
             })
-            .catch((error) => console.error('Error fetching nappy types:', error));
+            .catch((error) => console.error('Error fetching nappy types:', error))
+            .finally(() => {
+            hideLoadingSpinner(); // Always hide the spinner after submission
+        });
     
         form.appendChild(nappyTypeSelect);
     }
 
+    /**
+    * BOOTSTRAP JS LOGIC
+    */
+
+    // function showSuccessToast(message) {
+    //     const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    //     const toast = document.createElement('div');
+    //     toast.className = 'toast align-items-center text-bg-success border-0';
+    //     toast.role = 'alert';
+    //     toast.innerHTML = `
+    //         <div class="d-flex">
+    //             <div class="toast-body">${message}</div>
+    //             <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    //         </div>
+    //     `;
+    //     toastContainer.appendChild(toast);
+    //     const toastInstance = new bootstrap.Toast(toast);
+    //     toastInstance.show();
+    // }
+    
+    // function createToastContainer() {
+    //     const container = document.createElement('div');
+    //     container.id = 'toast-container';
+    //     container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    //     document.body.appendChild(container);
+    //     return container;
+    // }
+
+    // document.querySelectorAll('.modal').forEach(modal => {
+    //     const modalInstance = new bootstrap.Modal(modal);
+    //     modal.querySelector('form').addEventListener('submit', e => {
+    //         e.preventDefault();
+    //         modalInstance.hide(); // Close modal on submission
+    //         showSuccessToast('Item added successfully!');
+    //     });
+    // });
+
+    // let debounceTimeout;
+    // function debounce(fn, delay = 300) {
+    //     return (...args) => {
+    //         clearTimeout(debounceTimeout);
+    //         debounceTimeout = setTimeout(() => fn(...args), delay);
+    //     };
+    // }
+
+    // // Usage:
+    // const refreshDropdown = debounce((endpoint, selectElement) => {
+    //     fetch(`./api/${endpoint}.php`, { headers: { Authorization: `Bearer ${token}` } })
+    //         .then(res => res.json())
+    //         .then(data => {
+    //             selectElement.innerHTML = data[endpoint]
+    //                 .map(item => `<option value="${item.id}">${item.name}</option>`)
+    //                 .join('');
+    //         });
+    // }, 500);
+
+    function showLoadingSpinner() {
+        document.getElementById('loading-spinner').style.display = 'block';
+    }
+    function hideLoadingSpinner() {
+        document.getElementById('loading-spinner').style.display = 'none';
+    }
+    
+    function fadeInElement(element) {
+        element.classList.add('fade-in');
+    }
+
 });
+
+    

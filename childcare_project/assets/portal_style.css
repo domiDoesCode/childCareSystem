@@ -274,17 +274,26 @@ body {
     font-size: 14px;
 }
 
-.food-items-container {
+.food-items-container,
+.activities-container,
+.medications-container,
+.symptoms-container {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
-.food-items-container select {
+.food-items-container select,
+.activities-container select,
+.medications-container select,
+.symptoms-container select {
     flex: 1;
 }
 
-.food-items-container button {
+.food-items-container button,
+.activities-container button,
+.medications-container button,
+.symptoms-container button {
     background-color: #e6bbad;
     color: white;
     border: none;
@@ -294,31 +303,10 @@ body {
     font-size: 14px;
 }
 
-.food-items-container button:hover {
-    background-color: #d99c8a;
-}
-
-.activities-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.activities-container select {
-    flex: 1;
-}
-
-.activities-container button {
-    background-color: #e6bbad;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 8px;
-    font-size: 14px;
-}
-
-.activities-container button:hover {
+.food-items-container button:hover,
+.activities-container button:hover,
+.medications-container button:hover,
+.symptoms-container button:hover {
     background-color: #d99c8a;
 }
 
@@ -347,6 +335,46 @@ body {
     color: #555;
 }
 
+input:focus, select:focus, textarea:focus {
+    outline: 2px solid #d99c8a;
+    box-shadow: 0 0 5px rgba(217, 156, 138, 0.5);
+}
+
+/* -------------------------------------------------------------- */
+/* Other */
+/* -------------------------------------------------------------- */
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #d99c8a;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+select {
+    transition: all 0.3s ease;
+}
+select:hover {
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+}
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
 /* -------------------------------------------------------------- */
 /* Adjustments for mobile */
 /* -------------------------------------------------------------- */
@@ -365,3 +393,4 @@ body {
         padding: 10px;
     }
 }
+
