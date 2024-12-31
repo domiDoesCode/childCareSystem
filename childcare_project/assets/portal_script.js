@@ -8,42 +8,46 @@ document.addEventListener('DOMContentLoaded', function () {
     const roomList = document.getElementById('room-list');
     const backToRoomsButton = document.getElementById('back-to-rooms');
 
+    
+
     // Decode JWT Token
     if (token) {
         try {
             const decodedToken = JSON.parse(atob(token.split('.')[1]));
             userRole = decodedToken.data.role;
-            // // Call this function after fetching the user's role during login
-            // adjustUIBasedOnRole(userRole);
+            // Call this function after fetching the user's role during login
+            adjustUIBasedOnRole(userRole);
         } catch (error) {
             console.error('Error decoding token:', error);
         }
     }
 
-//     function adjustUIBasedOnRole(roleId) {
-//     const forms = document.querySelectorAll('.child-form');
-//     const dashboardButton = document.getElementById('dashboard-button');
-//     const sectionButtons = document.querySelectorAll('.section-button');
+    function checkUserRole(requiredRole, action = 'this action') {
+        if (userRole === 3) { // Assuming role 3 is 'parent'
+            alert(`You are not authorized to perform ${action}.`);
+            console.warn(`Access denied: User role 3 attempted to perform ${action}.`);
+            return false; // Deny access
+        }
+        return true; // Allow access
+    }
 
-//     if (roleId === 3) { // Parent role
-//         // Hide forms and dashboard button for parents
-//         forms.forEach(form => form.style.display = 'none');
-//         dashboardButton.style.display = 'none';
-
-//         // Allow only profile viewing
-//         sectionButtons.forEach(button => {
-//             button.style.display = button.dataset.section === 'profile' ? 'inline-block' : 'none';
-//         });
-//     } else if (roleId === 2) { // Caregiver role
-//         // Caregivers can see forms but not admin-only sections
-//         dashboardButton.style.display = 'block';
-//         sectionButtons.forEach(button => button.style.display = 'inline-block');
-//     } else if (roleId === 1) { // Admin role
-//         // Admin has full access
-//         dashboardButton.style.display = 'block';
-//         sectionButtons.forEach(button => button.style.display = 'inline-block');
-//     }
-// }
+    /** 
+     * If User is a Parent, restric their view.
+     */
+    function adjustUIBasedOnRole(role) {
+        const menuButtons = document.querySelectorAll('.menu-button');
+    
+        if (role === 3) { // Parent role
+            // Hide all menu buttons except Dashboard
+            menuButtons.forEach((btn) => {
+                if (btn.dataset.section !== 'dashboard') {
+                    btn.style.display = 'none';
+                }
+            });
+    
+        }
+    }
+    
 
     /** 
      * Reset portal state to show room selection.
@@ -275,6 +279,8 @@ document.addEventListener('DOMContentLoaded', function () {
      * Submit data from the forms
      */
     function submitForm(form, section) {
+        if (!checkUserRole(1, 'submit this form') && !checkUserRole(2, 'submit this form')) return; // Prevent unauthorized users
+
         const childId = form.dataset.childId; // Get the associated child ID
         if (!childId) {
             console.error('Child ID is missing in the form dataset.');
@@ -391,51 +397,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return JSON.stringify(entry); // Fallback for unexpected data
         }
     }
-    
-
-    // /**
-    //  * Show child profile modal.
-    //  */
-    // function showChildProfile(childId, childName) {
-    //     const modal = document.getElementById('child-profile-modal');
-    //     const modalChildName = document.getElementById('modal-child-name');
-
-    //     modalChildName.textContent = `Profile of ${childName}`;
-
-    //     ['diet', 'activities', 'health', 'nappy'].forEach((section) => {
-    //         showLoadingSpinner(); // Show the spinner before starting the fetch
-    //         fetch(`./api/${section}.php?child_id=${childId}`, {
-    //             method: 'GET',
-    //             headers: { Authorization: `Bearer ${token}` },
-    //         })
-    //             .then((response) => response.json())
-    //             .then((data) => {
-    //                 const historyList = document.querySelector(`#profile-${section}-section .history-list`);
-    //                 historyList.innerHTML = '';
-
-    //                 if (data[section] && data[section].length > 0) {
-    //                     data[section].forEach((entry) => {
-    //                         const historyItem = document.createElement('div');
-    //                         historyItem.textContent = formatEntry(section, entry);
-    //                         historyList.appendChild(historyItem);
-    //                     });
-    //                 } else {
-    //                     historyList.innerHTML = '<p>No history available.</p>';
-    //                 }
-    //             })
-    //             .catch((error) => console.error(`Error fetching ${section} history:`, error))
-    //             .finally(() => {
-    //                 hideLoadingSpinner(); // Always hide the spinner after submission
-    //             });
-    //     });
-
-    //     modal.style.display = 'block';
-    // }
-
-    // document.getElementById('close-profile-modal').onclick = function () {
-    //     const modal = document.getElementById('child-profile-modal');
-    //     modal.style.display = 'none';
-    // };
 
     /**
      * Show child profile modal with recent entries.
@@ -597,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.appendChild(foodItemsContainer);
 
         // Load existing food items
-        loadFoodItems(foodItemsSelect);
+        loadFoodItems(null, foodItemsSelect);
 
     }
 
@@ -628,11 +589,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.warn('No food items found');
                 }
 
-                // Automatically set the meal type in the general form
-                const mealTypeSelect = selectElement.closest('form').querySelector('select[name="meal_type"]');
-                if (mealTypeSelect) {
-                    mealTypeSelect.value = mealTypeId; // Update the meal type selection
-                }
+                // // Automatically set the meal type in the general form  WAS CAUSING AND ERROR TO BE LOGGED WHICH DID NOT PREVENT ANY FUNCTIONALITY BUT IT WAS LOGGED
+                // const mealTypeSelect = selectElement.closest('form').querySelector('select[name="meal_type"]');
+                // if (mealTypeSelect) {
+                //     mealTypeSelect.value = mealTypeId; // Update the meal type selection
+                // }
             })
             .catch((error) => console.error('Error fetching food items:', error))
             .finally(() => {

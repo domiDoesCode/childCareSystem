@@ -3,7 +3,6 @@ header('Content-Type: application/json');
 require '../config/db.php';
 require 'validate_jwt.php';
 
-// Retrieve and validate JWT
 $headers = getallheaders();
 $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
 
@@ -33,27 +32,8 @@ if (!$childId) {
     exit;
 }
 
-// Additional validation for Parent role
-if ($roleId == 3) { // Parent role
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) AS count
-        FROM child_parent_links
-        WHERE child_id = ? AND parent_id = ?
-    ");
-    $stmt->bind_param("ii", $childId, $userId);
-    $stmt->execute();
-    $result = $stmt->get_result()->fetch_assoc();
-    $stmt->close();
-
-    if ($result['count'] == 0) {
-        http_response_code(403);
-        echo json_encode(['status' => 'error', 'error' => 'Access denied: This child is not linked to your account']);
-        exit;
-    }
-}
-
 // Handle GET requests to fetch existing diet entries
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $stmt = $conn->prepare("
         SELECT 
             diet.date_recorded, 
@@ -79,18 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $stmt->close();
-}
+} 
 // Handle POST requests to add new diet entries
-elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!in_array($roleId, [1, 2])) { // Only Admin (1) and Caregiver (2) can add diet entries
-        http_response_code(403);
-        echo json_encode(['status' => 'error', 'error' => 'Access denied: You are not allowed to add entries']);
-        exit;
-    }
-
+elseif ($_SERVER['REQUEST_METHOD'] == 'POST' && ($roleId == 1 || $roleId == 2)) { 
     $childId = $_POST['child_id'] ?? null;
     $mealTypeId = $_POST['meal_type_id'] ?? null;
     $foodItemIds = $_POST['food_item_ids'] ?? []; // This should be an array
+
+    // Debugging: Log incoming POST data
+    error_log("POST Data: " . print_r($_POST, true));
 
     if (!$childId || !$mealTypeId || empty($foodItemIds)) {
         http_response_code(400);
@@ -126,9 +103,10 @@ elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(500);
         echo json_encode(['status' => 'error', 'error' => 'Failed to add diet entry', 'details' => $e->getMessage()]);
     }
-} else {
-    http_response_code(405);
-    echo json_encode(['status' => 'error', 'error' => 'Invalid request method']);
+} 
+else {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'error' => 'Unauthorized or invalid request method']);
 }
 
 $conn->close();
