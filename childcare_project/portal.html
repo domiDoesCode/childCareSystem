@@ -14,6 +14,7 @@
         <button class="menu-button" data-section="activities">Activities</button>
         <button class="menu-button" data-section="health">Health</button>
         <button class="menu-button" data-section="nappy">Nappy</button>
+        <button id="view-dashboard-button" class="menu-button dashboard-button" data-section="dashboard">Dashboard</button>
     </section>
     
     <section class="room_section" id="room-section">
@@ -29,26 +30,44 @@
     <!-- Child Profile Modal -->
     <div id="child-profile-modal" class="modal" style="display: none;">
         <div class="modal-content">
-            <span class="close-button" id="close-profile-modal">&times;</span>
-            <h2 id="modal-child-name">Child Profile</h2>
+            <span id="close-profile-modal" class="close-button">&times;</span>
+            <h3 id="modal-child-name">Profile</h3>
+    
             <div id="profile-diet-section">
-                <h3>Diet History</h3>
-                <div class="history-list"></div>
+                <h4>Diet</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="diet" data-child-id="1">View Diet History</button>
             </div>
+    
             <div id="profile-activities-section">
-                <h3>Activities History</h3>
-                <div class="history-list"></div>
+                <h4>Activities</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="activities" data-child-id="1">View Activities History</button>
             </div>
+    
             <div id="profile-health-section">
-                <h3>Health History</h3>
-                <div class="history-list"></div>
+                <h4>Health</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="health" data-child-id="1">View Health History</button>
             </div>
+    
             <div id="profile-nappy-section">
-                <h3>Nappy History</h3>
-                <div class="history-list"></div>
+                <h4>Nappy</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="nappy" data-child-id="1">View Nappy History</button>
             </div>
         </div>
     </div>
+    
+    <!-- Add a new modal for detailed history -->
+    <div id="history-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-history-modal" class="close-button">&times;</span>
+            <h3 id="history-modal-title"></h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+    
 
     <div id="add-food-item-modal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -138,6 +157,43 @@
                 <input type="text" id="medication-name" name="name" required>
                 <button type="submit">Add</button>
             </form>
+        </div>
+    </div>
+
+    <div id="dashboard-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-dashboard-modal" class="close-button">&times;</span>
+            <h2>Dashboard Overview</h2>
+            <div id="dashboard-summary">
+                <div id="diet-summary">
+                    <h3>Diet Summary</h3>
+                    <ul id="diet-summary-list"></ul>
+                    <button class="view-details-button" data-section="diet">View Details</button>
+                </div>
+                <div id="activities-summary">
+                    <h3>Activity Summary</h3>
+                    <div id="activity-summary-details"></div>
+                    <button class="view-details-button" data-section="activities">View Details</button>
+                </div>
+                <div id="health-summary">
+                    <h3>Health Summary</h3>
+                    <div id="health-summary-details"></div>
+                    <button class="view-details-button" data-section="health">View Details</button>
+                </div>
+                <div id="nappy-summary">
+                    <h3>Nappy Summary</h3>
+                    <ul id="nappy-summary-list"></ul>
+                    <button class="view-details-button" data-section="nappy">View Details</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="details-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-details-modal" class="close-button">&times;</span>
+            <h3 id="details-modal-title">Details</h3>
+            <div id="details-list"></div>
         </div>
     </div>
 

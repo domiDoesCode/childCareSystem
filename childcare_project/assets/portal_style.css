@@ -341,7 +341,32 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* -------------------------------------------------------------- */
-/* Other */
+/* Dashboard */
+/* -------------------------------------------------------------- */
+
+#view-dashboard-button {
+    background-color: #d4edda; /* Light green */
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#view-dashboard-button:hover {
+    background-color: #c3e6cb;
+    transform: scale(1.05);
+}
+
+#view-dashboard-button:active {
+    background-color: #b1dfbb;
+    transform: scale(1);
+}
+
+/* -------------------------------------------------------------- */
+/* Other */d
 /* -------------------------------------------------------------- */
 
 .spinner {

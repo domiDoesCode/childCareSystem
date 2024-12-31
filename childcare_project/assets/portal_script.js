@@ -13,10 +13,37 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const decodedToken = JSON.parse(atob(token.split('.')[1]));
             userRole = decodedToken.data.role;
+            // // Call this function after fetching the user's role during login
+            // adjustUIBasedOnRole(userRole);
         } catch (error) {
             console.error('Error decoding token:', error);
         }
     }
+
+//     function adjustUIBasedOnRole(roleId) {
+//     const forms = document.querySelectorAll('.child-form');
+//     const dashboardButton = document.getElementById('dashboard-button');
+//     const sectionButtons = document.querySelectorAll('.section-button');
+
+//     if (roleId === 3) { // Parent role
+//         // Hide forms and dashboard button for parents
+//         forms.forEach(form => form.style.display = 'none');
+//         dashboardButton.style.display = 'none';
+
+//         // Allow only profile viewing
+//         sectionButtons.forEach(button => {
+//             button.style.display = button.dataset.section === 'profile' ? 'inline-block' : 'none';
+//         });
+//     } else if (roleId === 2) { // Caregiver role
+//         // Caregivers can see forms but not admin-only sections
+//         dashboardButton.style.display = 'block';
+//         sectionButtons.forEach(button => button.style.display = 'inline-block');
+//     } else if (roleId === 1) { // Admin role
+//         // Admin has full access
+//         dashboardButton.style.display = 'block';
+//         sectionButtons.forEach(button => button.style.display = 'inline-block');
+//     }
+// }
 
     /** 
      * Reset portal state to show room selection.
@@ -119,6 +146,10 @@ document.addEventListener('DOMContentLoaded', function () {
      * Create a form container for the child.
      */
     function createChildForm(child) {
+        // if (section === 'dashboard') {
+        //     return; // Skip creating child forms for the dashboard
+        // }
+
         const formContainer = document.createElement('div');
         formContainer.className = 'child-form';
         formContainer.dataset.childId = child.id;
@@ -140,6 +171,11 @@ document.addEventListener('DOMContentLoaded', function () {
      * Toggle inputs inside each child form based on the selected section.
      */
     function toggleChildInputs(section) {
+        if (section === 'dashboard') {
+            showDashboardModal();
+            return; // Skip further processing for forms.
+        }
+        
         const childCards = document.querySelectorAll('.child-card');
         childCards.forEach((childCard) => {
             const childId = childCard.dataset.childId; // Extract child ID from card
@@ -220,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log(`Fetched ${section} data:`, data); // Debugging response
                 historyPreview.innerHTML = ''; // Clear previous entries
                 if (data[section] && data[section].length > 0) {
-                    data[section].slice(0, 2).forEach((entry) => {
+                    data[section].slice(0, 3).forEach((entry) => {
                         const entryDiv = document.createElement('div');
                         entryDiv.textContent = formatEntry(section, entry); // Format entry for display
                         historyPreview.appendChild(entryDiv);
@@ -235,7 +271,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-
+    /**
+     * Submit data from the forms
+     */
     function submitForm(form, section) {
         const childId = form.dataset.childId; // Get the associated child ID
         if (!childId) {
@@ -335,6 +373,10 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
     
+
+    /**
+     * Format the Historical data for a better visual representation
+     */
     function formatEntry(section, entry) {
         switch (section) {
             case 'diet':
@@ -351,47 +393,128 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
 
+    // /**
+    //  * Show child profile modal.
+    //  */
+    // function showChildProfile(childId, childName) {
+    //     const modal = document.getElementById('child-profile-modal');
+    //     const modalChildName = document.getElementById('modal-child-name');
+
+    //     modalChildName.textContent = `Profile of ${childName}`;
+
+    //     ['diet', 'activities', 'health', 'nappy'].forEach((section) => {
+    //         showLoadingSpinner(); // Show the spinner before starting the fetch
+    //         fetch(`./api/${section}.php?child_id=${childId}`, {
+    //             method: 'GET',
+    //             headers: { Authorization: `Bearer ${token}` },
+    //         })
+    //             .then((response) => response.json())
+    //             .then((data) => {
+    //                 const historyList = document.querySelector(`#profile-${section}-section .history-list`);
+    //                 historyList.innerHTML = '';
+
+    //                 if (data[section] && data[section].length > 0) {
+    //                     data[section].forEach((entry) => {
+    //                         const historyItem = document.createElement('div');
+    //                         historyItem.textContent = formatEntry(section, entry);
+    //                         historyList.appendChild(historyItem);
+    //                     });
+    //                 } else {
+    //                     historyList.innerHTML = '<p>No history available.</p>';
+    //                 }
+    //             })
+    //             .catch((error) => console.error(`Error fetching ${section} history:`, error))
+    //             .finally(() => {
+    //                 hideLoadingSpinner(); // Always hide the spinner after submission
+    //             });
+    //     });
+
+    //     modal.style.display = 'block';
+    // }
+
+    // document.getElementById('close-profile-modal').onclick = function () {
+    //     const modal = document.getElementById('child-profile-modal');
+    //     modal.style.display = 'none';
+    // };
+
     /**
-     * Show child profile modal.
+     * Show child profile modal with recent entries.
      */
     function showChildProfile(childId, childName) {
         const modal = document.getElementById('child-profile-modal');
         const modalChildName = document.getElementById('modal-child-name');
-
         modalChildName.textContent = `Profile of ${childName}`;
 
         ['diet', 'activities', 'health', 'nappy'].forEach((section) => {
-            showLoadingSpinner(); // Show the spinner before starting the fetch
-            fetch(`./api/${section}.php?child_id=${childId}`, {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${token}` },
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    const historyList = document.querySelector(`#profile-${section}-section .history-list`);
-                    historyList.innerHTML = '';
-
-                    if (data[section] && data[section].length > 0) {
-                        data[section].forEach((entry) => {
-                            const historyItem = document.createElement('div');
-                            historyItem.textContent = formatEntry(section, entry);
-                            historyList.appendChild(historyItem);
-                        });
-                    } else {
-                        historyList.innerHTML = '<p>No history available.</p>';
-                    }
-                })
-                .catch((error) => console.error(`Error fetching ${section} history:`, error))
-                .finally(() => {
-                    hideLoadingSpinner(); // Always hide the spinner after submission
-                });
+            const historyPreview = document.querySelector(`#profile-${section}-section .history-preview`);
+            fetchRecentEntries(section, childId, historyPreview); // Use fetchRecentEntries for recent entries
         });
 
         modal.style.display = 'block';
     }
 
+    /**
+     * Close the child profile modal.
+     */
     document.getElementById('close-profile-modal').onclick = function () {
         const modal = document.getElementById('child-profile-modal');
+        modal.style.display = 'none';
+    };
+
+    // Attach event listeners to all buttons with the "history-button" class
+    document.querySelectorAll('.history-button').forEach((button) => {
+        button.addEventListener('click', (e) => {
+            const section = button.getAttribute('data-section'); // Get section from data attribute
+            const childId = button.getAttribute('data-child-id'); // Get child ID from data attribute
+            if (section && childId) {
+                showSectionHistory(section, childId); // Call the function with section and childId
+            } else {
+                console.error('Missing section or child ID for history button.');
+            }
+        });
+    });
+
+    /**
+     * Show history modal for a specific section.
+     */
+    function showSectionHistory(section, childId) {
+        const modal = document.getElementById('history-modal');
+        const modalTitle = document.getElementById('history-modal-title');
+        const historyList = document.getElementById('history-list');
+
+        modalTitle.textContent = `Full History of ${section.charAt(0).toUpperCase() + section.slice(1)}`;
+        historyList.innerHTML = ''; // Clear previous content
+
+        showLoadingSpinner(); // Show spinner while loading
+        fetch(`./api/${section}.php?child_id=${childId}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data[section] && data[section].length > 0) {
+                    data[section].forEach((entry) => {
+                        const entryDiv = document.createElement('div');
+                        entryDiv.textContent = formatEntry(section, entry);
+                        historyList.appendChild(entryDiv);
+                    });
+                } else {
+                    historyList.textContent = 'No entries available.';
+                }
+            })
+            .catch((error) => console.error(`Error fetching ${section} history:`, error))
+            .finally(() => {
+                hideLoadingSpinner(); // Hide spinner after loading
+            });
+
+        modal.style.display = 'block';
+    }
+
+    /**
+     * Close the history modal.
+     */
+    document.getElementById('close-history-modal').onclick = function () {
+        const modal = document.getElementById('history-modal');
         modal.style.display = 'none';
     };
 
@@ -478,8 +601,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
-    function loadFoodItems(mealTypeId, selectElement) {
-        
+
+    /**
+     * Fetch and load food items based on the meal type.
+     */
+    function loadFoodItems(mealTypeId, selectElement) { 
         showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`./api/food_items.php?meal_type_id=${mealTypeId}`, {
             method: 'GET',
@@ -514,7 +640,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
     
-
+    /**
+     * Show the Modal for new food item addition
+     */
     function showAddFoodItemModal() {
         const modal = document.getElementById('add-food-item-modal');
         const form = modal.querySelector('form');
@@ -824,263 +952,267 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('add-activity-modal').style.display = 'none';
     };
 
-/*
-* ----------------------------------------------------------------------------
-* ACTIVITIES
-* ----------------------------------------------------------------------------
-*/
+    /*
+    * ----------------------------------------------------------------------------
+    * HEALTH
+    * ----------------------------------------------------------------------------
+    */
 
-function createHealthInputs(form) {
-    // Clear existing inputs
-    form.innerHTML = '';
+    function createHealthInputs(form) {
+        // Clear existing inputs
+        form.innerHTML = '';
 
-    // Temperature Input
-    const temperatureLabel = document.createElement('label');
-    temperatureLabel.textContent = 'Temperature (°C):';
-    form.appendChild(temperatureLabel);
+        // Temperature Input
+        const temperatureLabel = document.createElement('label');
+        temperatureLabel.textContent = 'Temperature (°C):';
+        form.appendChild(temperatureLabel);
 
-    const temperatureInput = document.createElement('input');
-    temperatureInput.name = 'temperature';
-    temperatureInput.type = 'number';
-    temperatureInput.step = '0.1'; // Allow decimals
-    temperatureInput.required = true;
-    form.appendChild(temperatureInput);
+        const temperatureInput = document.createElement('input');
+        temperatureInput.name = 'temperature';
+        temperatureInput.type = 'number';
+        temperatureInput.step = '0.1'; // Allow decimals
+        temperatureInput.required = true;
+        form.appendChild(temperatureInput);
 
-    // Symptoms Multi-Select
-    const symptomsLabel = document.createElement('label');
-    symptomsLabel.textContent = 'Symptoms:';
-    form.appendChild(symptomsLabel);
+        // Symptoms Multi-Select
+        const symptomsLabel = document.createElement('label');
+        symptomsLabel.textContent = 'Symptoms:';
+        form.appendChild(symptomsLabel);
 
-    const symptomsContainer = document.createElement('div');
-    symptomsContainer.className = 'symptoms-container';
+        const symptomsContainer = document.createElement('div');
+        symptomsContainer.className = 'symptoms-container';
 
-    const symptomsSelect = document.createElement('select');
-    symptomsSelect.name = 'symptoms[]';
-    symptomsSelect.multiple = true; // Allow multi-selection
-    symptomsContainer.appendChild(symptomsSelect);
+        const symptomsSelect = document.createElement('select');
+        symptomsSelect.name = 'symptoms[]';
+        symptomsSelect.multiple = true; // Allow multi-selection
+        symptomsContainer.appendChild(symptomsSelect);
 
-    const addSymptomButton = document.createElement('button');
-    addSymptomButton.type = 'button';
-    addSymptomButton.textContent = '+';
-    addSymptomButton.addEventListener('click', showAddSymptomModal);
-    symptomsContainer.appendChild(addSymptomButton);
+        const addSymptomButton = document.createElement('button');
+        addSymptomButton.type = 'button';
+        addSymptomButton.textContent = '+';
+        addSymptomButton.addEventListener('click', showAddSymptomModal);
+        symptomsContainer.appendChild(addSymptomButton);
 
-    form.appendChild(symptomsContainer);
+        form.appendChild(symptomsContainer);
 
-    // Load existing symptoms
-    loadSymptoms(symptomsSelect);
+        // Load existing symptoms
+        loadSymptoms(symptomsSelect);
 
-    // Medications Multi-Select
-    const medicationsLabel = document.createElement('label');
-    medicationsLabel.textContent = 'Medications:';
-    form.appendChild(medicationsLabel);
+        // Medications Multi-Select
+        const medicationsLabel = document.createElement('label');
+        medicationsLabel.textContent = 'Medications:';
+        form.appendChild(medicationsLabel);
 
-    const medicationsContainer = document.createElement('div');
-    medicationsContainer.className = 'medications-container';
+        const medicationsContainer = document.createElement('div');
+        medicationsContainer.className = 'medications-container';
 
-    const medicationsSelect = document.createElement('select');
-    medicationsSelect.name = 'medications[]';
-    medicationsSelect.multiple = true; // Allow multi-selection
-    medicationsContainer.appendChild(medicationsSelect);
+        const medicationsSelect = document.createElement('select');
+        medicationsSelect.name = 'medications[]';
+        medicationsSelect.multiple = true; // Allow multi-selection
+        medicationsContainer.appendChild(medicationsSelect);
 
-    const addMedicationButton = document.createElement('button');
-    addMedicationButton.type = 'button';
-    addMedicationButton.textContent = '+';
-    addMedicationButton.addEventListener('click', showAddMedicationModal);
-    medicationsContainer.appendChild(addMedicationButton);
+        const addMedicationButton = document.createElement('button');
+        addMedicationButton.type = 'button';
+        addMedicationButton.textContent = '+';
+        addMedicationButton.addEventListener('click', showAddMedicationModal);
+        medicationsContainer.appendChild(addMedicationButton);
 
-    form.appendChild(medicationsContainer);
+        form.appendChild(medicationsContainer);
 
-    // Load existing medications
-    loadMedications(medicationsSelect);
+        // Load existing medications
+        loadMedications(medicationsSelect);
 
-    // Form Submission
-    form.onsubmit = (e) => {
-        e.preventDefault();
-        submitForm(form, 'health');
-    };
+        // Form Submission
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            submitForm(form, 'health');
+        };
 
-}
+    }
 
-/**
- * Load symptoms into the dropdown.
- */
-function loadSymptoms(selectElement) {
-    showLoadingSpinner(); // Show the spinner before starting the fetch
-    fetch('./api/symptoms.php', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            selectElement.innerHTML = ''; // Clear existing options
-            if (data.status === 'success' && data.symptoms.length > 0) {
-                data.symptoms.forEach((symptom) => {
-                    const option = document.createElement('option');
-                    option.value = symptom.id; // Use symptom ID
-                    option.textContent = symptom.name; // Display symptom name
-                    selectElement.appendChild(option);
-                });
-            } else {
-                console.warn('No symptoms found.');
-            }
-        })
-        .catch((error) => console.error('Error fetching symptoms:', error))
-        .finally(() => {
-            hideLoadingSpinner(); // Always hide the spinner after submission
-        });
-}
-
-/**
- * Load medications into the dropdown.
- */
-function loadMedications(selectElement) {
-    showLoadingSpinner(); // Show the spinner before starting the fetch
-    fetch('./api/medications.php', {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            selectElement.innerHTML = ''; // Clear existing options
-            if (data.status === 'success' && data.medications.length > 0) {
-                data.medications.forEach((medication) => {
-                    const option = document.createElement('option');
-                    option.value = medication.id; // Use medication ID
-                    option.textContent = medication.name; // Display medication name
-                    selectElement.appendChild(option);
-                });
-            } else {
-                console.warn('No medications found.');
-            }
-        })
-        .catch((error) => console.error('Error fetching medications:', error))
-        .finally(() => {
-            hideLoadingSpinner(); // Always hide the spinner after submission
-        });
-}
-
-
-function showAddSymptomModal() {
-    const modal = document.getElementById('add-symptom-modal');
-    const form = modal.querySelector('form');
-    const symptomInput = modal.querySelector('input[name="name"]');
-
-    // Add fade-in effect to the form
-    fadeInElement(modal);
-
-    // Reset modal fields when opened
-    form.reset();
-    modal.style.display = 'block';
-
-    // Handle form submission
-    form.onsubmit = (e) => {
-        e.preventDefault();
-
-        const formData = new FormData(form);
-        const symptomName = symptomInput.value.trim();
-
-        if (!symptomName) {
-            alert('Please enter a symptom name.');
-            return;
-        }
-
+    /**
+     * Load symptoms into the dropdown.
+     */
+    function loadSymptoms(selectElement) {
         showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/symptoms.php', {
-            method: 'POST',
+            method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
-            body: formData,
         })
             .then((response) => response.json())
             .then((data) => {
-                if (data.status === 'success') {
-                    alert('Symptom added successfully!');
-                    
-                    // Refresh the symptoms dropdown in the health form
-                    const symptomSelects = document.querySelectorAll('select[name="symptoms[]"]');
-                    symptomSelects.forEach((select) => loadSymptoms(select));
-                    
-                    // Reset and close the modal
-                    form.reset();
-                    modal.style.display = 'none';
+                selectElement.innerHTML = ''; // Clear existing options
+                if (data.status === 'success' && data.symptoms.length > 0) {
+                    data.symptoms.forEach((symptom) => {
+                        const option = document.createElement('option');
+                        option.value = symptom.id; // Use symptom ID
+                        option.textContent = symptom.name; // Display symptom name
+                        selectElement.appendChild(option);
+                    });
                 } else {
-                    alert(`Failed to add symptom: ${data.message}`);
+                    console.warn('No symptoms found.');
                 }
             })
-            .catch((error) => console.error('Error adding symptom:', error))
+            .catch((error) => console.error('Error fetching symptoms:', error))
             .finally(() => {
                 hideLoadingSpinner(); // Always hide the spinner after submission
             });
-    };
+    }
 
-        // Close modal logic
-        document.getElementById('close-symptom-modal').onclick = function () {
-        document.getElementById('add-symptom-modal').style.display = 'none';
-    };
-}
-
-function showAddMedicationModal() {
-    const modal = document.getElementById('add-medication-modal');
-    const form = modal.querySelector('form');
-    const medicationInput = modal.querySelector('input[name="name"]');
-
-    // Add fade-in effect to the form
-    fadeInElement(modal);
-
-    // Reset modal fields when opened
-    form.reset();
-    modal.style.display = 'block';
-
-    // Handle form submission
-    form.onsubmit = (e) => {
-        e.preventDefault();
-
-        const formData = new FormData(form);
-        const medicationName = medicationInput.value.trim();
-
-        if (!medicationName) {
-            alert('Please enter a medication name.');
-            return;
-        }
-
+    /**
+     * Load medications into the dropdown.
+     */
+    function loadMedications(selectElement) {
         showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch('./api/medications.php', {
-            method: 'POST',
+            method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
-            body: formData,
         })
             .then((response) => response.json())
             .then((data) => {
-                if (data.status === 'success') {
-                    alert('Medication added successfully!');
-                    
-                    // Refresh the medications dropdown in the health form
-                    const medicationSelects = document.querySelectorAll('select[name="medications[]"]');
-                    medicationSelects.forEach((select) => loadMedications(select));
-                    
-                    // Reset and close the modal
-                    form.reset();
-                    modal.style.display = 'none';
+                selectElement.innerHTML = ''; // Clear existing options
+                if (data.status === 'success' && data.medications.length > 0) {
+                    data.medications.forEach((medication) => {
+                        const option = document.createElement('option');
+                        option.value = medication.id; // Use medication ID
+                        option.textContent = medication.name; // Display medication name
+                        selectElement.appendChild(option);
+                    });
                 } else {
-                    alert(`Failed to add medication: ${data.message}`);
+                    console.warn('No medications found.');
                 }
             })
-            .catch((error) => console.error('Error adding medication:', error))
+            .catch((error) => console.error('Error fetching medications:', error))
             .finally(() => {
                 hideLoadingSpinner(); // Always hide the spinner after submission
             });
-    };
+    }
 
-        // Close modal logic
-        document.getElementById('close-medication-modal').onclick = function () {
-        document.getElementById('add-medication-modal').style.display = 'none';
-    };
+    /**
+        * Fetch and load activities based on the activity type.
+        */
+    function showAddSymptomModal() {
+        const modal = document.getElementById('add-symptom-modal');
+        const form = modal.querySelector('form');
+        const symptomInput = modal.querySelector('input[name="name"]');
 
-}
+        // Add fade-in effect to the form
+        fadeInElement(modal);
 
-    // /**
-    //  * Create inputs for nappy section.
-    //  */
+        // Reset modal fields when opened
+        form.reset();
+        modal.style.display = 'block';
+
+        // Handle form submission
+        form.onsubmit = (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const symptomName = symptomInput.value.trim();
+
+            if (!symptomName) {
+                alert('Please enter a symptom name.');
+                return;
+            }
+
+            showLoadingSpinner(); // Show the spinner before starting the fetch
+            fetch('./api/symptoms.php', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === 'success') {
+                        alert('Symptom added successfully!');
+                        
+                        // Refresh the symptoms dropdown in the health form
+                        const symptomSelects = document.querySelectorAll('select[name="symptoms[]"]');
+                        symptomSelects.forEach((select) => loadSymptoms(select));
+                        
+                        // Reset and close the modal
+                        form.reset();
+                        modal.style.display = 'none';
+                    } else {
+                        alert(`Failed to add symptom: ${data.message}`);
+                    }
+                })
+                .catch((error) => console.error('Error adding symptom:', error))
+                .finally(() => {
+                    hideLoadingSpinner(); // Always hide the spinner after submission
+                });
+        };
+
+            // Close modal logic
+            document.getElementById('close-symptom-modal').onclick = function () {
+            document.getElementById('add-symptom-modal').style.display = 'none';
+        };
+    }
+
+    function showAddMedicationModal() {
+        const modal = document.getElementById('add-medication-modal');
+        const form = modal.querySelector('form');
+        const medicationInput = modal.querySelector('input[name="name"]');
+
+        // Add fade-in effect to the form
+        fadeInElement(modal);
+
+        // Reset modal fields when opened
+        form.reset();
+        modal.style.display = 'block';
+
+        // Handle form submission
+        form.onsubmit = (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const medicationName = medicationInput.value.trim();
+
+            if (!medicationName) {
+                alert('Please enter a medication name.');
+                return;
+            }
+
+            showLoadingSpinner(); // Show the spinner before starting the fetch
+            fetch('./api/medications.php', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === 'success') {
+                        alert('Medication added successfully!');
+                        
+                        // Refresh the medications dropdown in the health form
+                        const medicationSelects = document.querySelectorAll('select[name="medications[]"]');
+                        medicationSelects.forEach((select) => loadMedications(select));
+                        
+                        // Reset and close the modal
+                        form.reset();
+                        modal.style.display = 'none';
+                    } else {
+                        alert(`Failed to add medication: ${data.message}`);
+                    }
+                })
+                .catch((error) => console.error('Error adding medication:', error))
+                .finally(() => {
+                    hideLoadingSpinner(); // Always hide the spinner after submission
+                });
+        };
+
+            // Close modal logic
+            document.getElementById('close-medication-modal').onclick = function () {
+            document.getElementById('add-medication-modal').style.display = 'none';
+        };
+
+    }
+
+    /*
+    * ----------------------------------------------------------------------------
+    * NAPPY
+    * ----------------------------------------------------------------------------
+    */
     function createNappyInputs(form) {
         form.innerHTML = ''; // Clear existing inputs
     
@@ -1119,62 +1251,264 @@ function showAddMedicationModal() {
         form.appendChild(nappyTypeSelect);
     }
 
-    /**
-    * BOOTSTRAP JS LOGIC
+    /*
+    * ----------------------------------------------------------------------------
+    * DASHBOARD OVERVIEW
+    * ----------------------------------------------------------------------------
     */
-
-    // function showSuccessToast(message) {
-    //     const toastContainer = document.getElementById('toast-container') || createToastContainer();
-    //     const toast = document.createElement('div');
-    //     toast.className = 'toast align-items-center text-bg-success border-0';
-    //     toast.role = 'alert';
-    //     toast.innerHTML = `
-    //         <div class="d-flex">
-    //             <div class="toast-body">${message}</div>
-    //             <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-    //         </div>
-    //     `;
-    //     toastContainer.appendChild(toast);
-    //     const toastInstance = new bootstrap.Toast(toast);
-    //     toastInstance.show();
-    // }
+    function showDashboardModal() {
+        const modal = document.getElementById('dashboard-modal');
+        modal.style.display = 'block';
+        fadeInElement(modal); // Apply fade-in effect
+        loadDashboardOverview();
+    }
     
-    // function createToastContainer() {
-    //     const container = document.createElement('div');
-    //     container.id = 'toast-container';
-    //     container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-    //     document.body.appendChild(container);
-    //     return container;
-    // }
+    function hideDashboardModal() {
+        const modal = document.getElementById('dashboard-modal');
+        modal.style.display = 'none';
+    }
+    
+    // Add event listeners
+    document.getElementById('view-dashboard-button').addEventListener('click', showDashboardModal);
+    document.getElementById('close-dashboard-modal').addEventListener('click', hideDashboardModal);
 
-    // document.querySelectorAll('.modal').forEach(modal => {
-    //     const modalInstance = new bootstrap.Modal(modal);
-    //     modal.querySelector('form').addEventListener('submit', e => {
-    //         e.preventDefault();
-    //         modalInstance.hide(); // Close modal on submission
-    //         showSuccessToast('Item added successfully!');
-    //     });
-    // });
+    function loadDashboardOverview() {
+        // Show the spinner while loading
+        showLoadingSpinner();
 
-    // let debounceTimeout;
-    // function debounce(fn, delay = 300) {
-    //     return (...args) => {
-    //         clearTimeout(debounceTimeout);
-    //         debounceTimeout = setTimeout(() => fn(...args), delay);
-    //     };
-    // }
+        // Call all summary functions with error handling
+        Promise.allSettled([
+            loadDietSummary(),
+            loadActivitiesSummary(),
+            loadHealthSummary(),
+            loadNappySummary(),
+        ]).then((results) => {
+            results.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    console.error(`Error loading summary ${index + 1}:`, result.reason);
+                }
+            });
+            // Hide the spinner after all calls have settled
+            hideLoadingSpinner();
+        });
+    }
 
-    // // Usage:
-    // const refreshDropdown = debounce((endpoint, selectElement) => {
-    //     fetch(`./api/${endpoint}.php`, { headers: { Authorization: `Bearer ${token}` } })
-    //         .then(res => res.json())
-    //         .then(data => {
-    //             selectElement.innerHTML = data[endpoint]
-    //                 .map(item => `<option value="${item.id}">${item.name}</option>`)
-    //                 .join('');
-    //         });
-    // }, 500);
+    function loadDietSummary() {
+        fetch('./api/diet_summary.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const dietList = document.getElementById('diet-summary-list');
+                dietList.innerHTML = '';
+                if (data.summary.length > 0) {
+                    data.summary.forEach((entry) => {
+                        const li = document.createElement('li');
+                        li.textContent = `${entry.meal_type}: ${entry.total_entries} entries`;
+                        dietList.appendChild(li);
+                    });
+                } else {
+                    dietList.textContent = 'No diet entries today.';
+                }
+            })
+            .catch((error) => console.error('Error fetching diet summary:', error));
+    }
 
+    function loadActivitiesSummary() {
+        fetch('./api/activities_summary.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const activitiesContainer = document.getElementById('activity-summary-details');
+                activitiesContainer.innerHTML = ''; // Clear previous summary
+                if (data.summary.length > 0) {
+                    data.summary.forEach((entry) => {
+                        const activityDiv = document.createElement('div');
+                        activityDiv.textContent = `${entry.activity_type}: ${entry.total_entries} entries`;
+                        activitiesContainer.appendChild(activityDiv);
+                    });
+                } else {
+                    activitiesContainer.textContent = 'No activities recorded today.';
+                }
+            })
+            .catch((error) => console.error('Error fetching activities summary:', error));
+    }
+    
+
+    function loadHealthSummary() {
+        fetch('./api/health_summary.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const healthContainer = document.getElementById('health-summary-details');
+                healthContainer.innerHTML = ''; // Clear previous summary
+    
+                if (data.summary && Object.keys(data.summary).length > 0) {
+                    const minTemp = data.summary.min_temperature
+                        ? `Min Temperature: ${parseFloat(data.summary.min_temperature).toFixed(1)}°C`
+                        : 'Min Temperature: No temperature data found today.';
+                    const maxTemp = data.summary.max_temperature
+                        ? `Max Temperature: ${parseFloat(data.summary.max_temperature).toFixed(1)}°C`
+                        : 'Max Temperature: No temperature data found today.';
+                    const totalEntries = `Total Health Entries: ${data.summary.total_entries}`;
+    
+                    healthContainer.innerHTML = `<p>${minTemp}</p><p>${maxTemp}</p><p>${totalEntries}</p>`;
+                } else {
+                    healthContainer.textContent = 'No health entries recorded today.';
+                }
+            })
+            .catch((error) => console.error('Error fetching health summary:', error));
+    }
+    
+    
+    function loadNappySummary() {
+        fetch('./api/nappy_summary.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const nappyList = document.getElementById('nappy-summary-list');
+                nappyList.innerHTML = '';
+                if (data.summary.length > 0) {
+                    data.summary.forEach((entry) => {
+                        const li = document.createElement('li');
+                        li.textContent = `${entry.nappy_type}: ${entry.total_entries} entries`;
+                        nappyList.appendChild(li);
+                    });
+                } else {
+                    nappyList.textContent = 'No nappy entries today.';
+                }
+            })
+            .catch((error) => console.error('Error fetching nappy summary:', error));
+    }
+
+     // Attach event listeners for all "View Details" buttons
+    document.querySelectorAll('.view-details-button').forEach((button) => {
+        button.addEventListener('click', (e) => {
+            const section = button.getAttribute('data-section');
+        if (section) {
+                showDashboardDetails(section);
+            } else {
+                console.error('Section not specified for View Details button.');
+            }
+        });
+    });
+
+    // Close Details Modal
+    document.getElementById('close-details-modal').addEventListener('click', () => {
+        const modal = document.getElementById('details-modal');
+        modal.style.display = 'none';
+    });
+
+    function showDashboardDetails(section) {
+        const modal = document.getElementById('details-modal');
+        const modalTitle = document.getElementById('details-modal-title');
+        const detailsList = document.getElementById('details-list');
+    
+        modalTitle.textContent = `Detailed Entries for ${section.charAt(0).toUpperCase() + section.slice(1)}`;
+        detailsList.innerHTML = ''; // Clear previous content
+    
+        showLoadingSpinner(); // Show spinner while fetching data
+    
+        // Fetch data from the respective API
+        fetch(`./api/${section}_summary.php?details=true`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.summary && data.summary.length > 0) {
+                    // Group entries by child name
+                    const groupedEntries = data.summary.reduce((acc, entry) => {
+                        const childName = entry.child_name || 'Unknown';
+                        if (!acc[childName]) {
+                            acc[childName] = [];
+                        }
+                        acc[childName].push(entry);
+                        return acc;
+                    }, {});
+    
+                    // Display grouped entries
+                    for (const childName in groupedEntries) {
+                        const childSection = document.createElement('div');
+                        childSection.className = 'child-group';
+                        childSection.innerHTML = `<h3>${childName}</h3>`;
+    
+                        const childEntries = groupedEntries[childName];
+                        childEntries.forEach((entry) => {
+                            const entryDiv = document.createElement('div');
+                            entryDiv.className = 'details-entry';
+                            entryDiv.innerHTML = formatDetailedEntry(section, entry);
+                            childSection.appendChild(entryDiv);
+                        });
+    
+                        detailsList.appendChild(childSection);
+                    }
+                } else {
+                    detailsList.textContent = 'No entries found.';
+                }
+            })
+            .catch((error) => console.error(`Error fetching ${section} details:`, error))
+            .finally(() => {
+                hideLoadingSpinner(); // Hide spinner after data is loaded
+                modal.style.display = 'block'; // Show the modal
+            });
+    }
+    
+
+    function formatDetailedEntry(section, entry) {
+        switch (section) {
+            case 'diet':
+                return `
+                    <strong>Meal Type:</strong> ${entry.meal_type || 'N/A'}<br>
+                    <strong>Food Item:</strong> ${entry.food_item || 'N/A'}<br>
+                    <strong>Date:</strong> ${new Date(entry.date_recorded).toLocaleString()}
+                `;
+            case 'activities':
+                return `
+                    <strong>Activity Type:</strong> ${entry.activity_type || 'N/A'}<br>
+                    <strong>Activity:</strong> ${entry.activity || 'N/A'}<br>
+                    <strong>Date:</strong> ${new Date(entry.date_recorded).toLocaleString()}
+                `;
+            case 'health':
+                return `
+                    <strong>Temperature:</strong> ${entry.temperature ? `${entry.temperature}°C` : 'N/A'}<br>
+                    <strong>Symptoms:</strong> ${entry.symptoms || 'None'}<br>
+                    <strong>Medications:</strong> ${entry.medications || 'None'}<br>
+                    <strong>Date:</strong> ${new Date(entry.date_recorded).toLocaleString()}
+                `;
+            case 'nappy':
+                return `
+                    <strong>Nappy Type:</strong> ${entry.nappy_type || 'N/A'}<br>
+                    <strong>Date:</strong> ${new Date(entry.date_recorded).toLocaleString()}
+                `;
+            default:
+                return `<strong>Data:</strong> ${JSON.stringify(entry)}`;
+        }
+    }
+    
+    
+    
+    // Event listener to close the details modal
+    document.getElementById('close-details-modal').onclick = function () {
+        const modal = document.getElementById('details-modal');
+        modal.style.display = 'none';
+    };
+    
+    
+    
+
+    /*
+    * ----------------------------------------------------------------------------
+    * OTHER
+    * ----------------------------------------------------------------------------
+    */
     function showLoadingSpinner() {
         document.getElementById('loading-spinner').style.display = 'block';
     }

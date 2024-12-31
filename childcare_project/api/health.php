@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt->close();
 } 
 // Handle POST requests
-elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($roleId == 1 || $roleId == 2)) { 
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($roleId == 1 || $roleId == 3)) { 
     $childId = $_POST['child_id'] ?? null;
     $temperature = $_POST['temperature'] ?? null;
     $symptomIds = $_POST['symptom_ids'] ?? [];
