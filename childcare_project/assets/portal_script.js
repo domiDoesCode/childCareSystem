@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function checkUserRole(requiredRole, action = 'this action') {
+    function checkUserRole(userRole, action = 'this action') {
         if (userRole === 3) { // Assuming role 3 is 'parent'
             alert(`You are not authorized to perform ${action}.`);
             console.warn(`Access denied: User role 3 attempted to perform ${action}.`);
@@ -403,8 +403,46 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function showChildProfile(childId, childName) {
         const modal = document.getElementById('child-profile-modal');
+        modal.dataset.childId = childId; // Store the child ID in the modal dataset
         const modalChildName = document.getElementById('modal-child-name');
         modalChildName.textContent = `Profile of ${childName}`;
+        const profilePhoto = document.getElementById('child-profile-photo');
+        const dobField = document.getElementById('child-dob');
+        const allergiesField = document.getElementById('child-allergies');
+
+        // Fetch child data including profile photo
+        fetch(`./api/children.php?child_id=${childId}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success' && data.child) {
+                    const child = data.child;
+
+                    profilePhoto.src = data.child.photo
+                        ? `./uploads/children/${data.child.photo}`
+                        : './assets/default-profile.png';
+                    // Date of Birth
+                    dobField.textContent = `${child.date_of_birth || 'Not available'}`;
+
+                    // Allergies
+                    allergiesField.textContent = `${child.allergies || 'N/A'}`;
+
+                    // Show the update button only for caregivers and admins
+                    const updatePhotoSection = document.getElementById('update-profile-photo-section');
+                    if (userRole === 1 || userRole === 2) {
+                        updatePhotoSection.style.display = 'block';
+                    } else {
+                        updatePhotoSection.style.display = 'none';
+                    }
+                } else {
+                    console.error('Error fetching child details:', data.message);
+                }
+            })
+            .catch((error) => console.error('Error fetching child details:', error));
+
+
 
         ['diet', 'activities', 'health', 'nappy'].forEach((section) => {
             const historyPreview = document.querySelector(`#profile-${section}-section .history-preview`);
@@ -421,6 +459,94 @@ document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('child-profile-modal');
         modal.style.display = 'none';
     };
+
+
+    /**
+     * Update Profile Photo of the child.
+     */
+    document.getElementById('update-profile-photo-button').onclick = function (e) {
+        e.preventDefault();
+    
+        const photoInput = document.getElementById('child-photo-input');
+        const childId = document.getElementById('child-profile-modal').dataset.childId;
+    
+        if (!photoInput.files[0]) {
+            alert('Please select a photo to upload.');
+            return;
+        }
+        if (!childId) {
+            alert('Child ID is missing.');
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append('photo', photoInput.files[0]);
+        formData.append('child_id', childId);
+    
+        fetch('./api/photos.php', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    alert('Profile photo updated successfully!');
+                    document.getElementById('child-profile-photo').src = `./uploads/children/${data.photo}`;
+                } else {
+                    console.error('Error updating profile photo:', data.message);
+                    alert(`Failed to update photo: ${data.message}`);
+                }
+            })
+            .catch((error) => console.error('Error:', error));
+    };
+    
+
+    /**
+     * View Gallery of the child.
+     */
+    document.getElementById('view-gallery-button').onclick = function () {
+        const childId = document.getElementById('child-profile-modal').dataset.childId;
+    
+        if (!childId) {
+            alert('Child ID is missing.');
+            return;
+        }
+    
+        const galleryModal = document.getElementById('child-gallery-modal');
+        const galleryContainer = document.getElementById('child-gallery');
+    
+        galleryContainer.innerHTML = 'Loading...';
+    
+        fetch(`./api/photos.php?child_id=${childId}&type=gallery`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                galleryContainer.innerHTML = '';
+                if (data.photos && data.photos.length > 0) {
+                    data.photos.forEach((photo) => {
+                        const img = document.createElement('img');
+                        img.src = `./uploads/children/${photo.photo}`;
+                        img.alt = `Uploaded on ${photo.uploaded_at}`;
+                        img.className = 'gallery-photo';
+                        galleryContainer.appendChild(img);
+                    });
+                } else {
+                    galleryContainer.textContent = 'No photos available.';
+                }
+            })
+            .catch((error) => console.error('Error loading gallery:', error));
+    
+        galleryModal.style.display = 'block';
+    };
+    
+    // Close the gallery modal
+    document.getElementById('close-gallery-modal').onclick = function () {
+        document.getElementById('child-gallery-modal').style.display = 'none';
+    };
+    
 
     // Attach event listeners to all buttons with the "history-button" class
     document.querySelectorAll('.history-button').forEach((button) => {
@@ -1462,8 +1588,60 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.style.display = 'none';
     };
     
+    /*
+    * ----------------------------------------------------------------------------
+    * MEDIA UPLOADS
+    * ----------------------------------------------------------------------------
+    */
+
+    // function uploadChildPhoto(childId) {
+    //     const fileInput = document.getElementById('child-photo-input');
+    //     const formData = new FormData();
+    //     formData.append('photo', fileInput.files[0]);
+    //     formData.append('child_id', childId);
+    //     formData.append('type', 'profile'); // Specify profile photo upload
     
+    //     fetch('./api/photos.php', {
+    //         method: 'POST',
+    //         headers: { Authorization: `Bearer ${token}` },
+    //         body: formData,
+    //     })
+    //         .then((response) => response.json())
+    //         .then((data) => {
+    //             if (data.status === 'success') {
+    //                 alert('Profile photo uploaded successfully!');
+    //                 document.getElementById('child-photo').src = `./uploads/children/${fileInput.files[0].name}`;
+    //             } else {
+    //                 alert(`Error: ${data.message}`);
+    //             }
+    //         })
+    //         .catch((error) => console.error('Error uploading profile photo:', error));
+    // }
     
+
+    // function loadChildGallery(childId) {
+    //     fetch(`./api/photos.php?child_id=${childId}&type=gallery`, {
+    //         method: 'GET',
+    //         headers: { Authorization: `Bearer ${token}` },
+    //     })
+    //         .then((response) => response.json())
+    //         .then((data) => {
+    //             const galleryContainer = document.getElementById('child-gallery');
+    //             galleryContainer.innerHTML = '';
+    //             if (data.photos && data.photos.length > 0) {
+    //                 data.photos.forEach((photo) => {
+    //                     const img = document.createElement('img');
+    //                     img.src = `./uploads/children/${photo.photo}`;
+    //                     img.alt = `Uploaded on ${photo.uploaded_at}`;
+    //                     img.className = 'gallery-photo';
+    //                     galleryContainer.appendChild(img);
+    //                 });
+    //             } else {
+    //                 galleryContainer.textContent = 'No photos available.';
+    //             }
+    //         })
+    //         .catch((error) => console.error('Error loading gallery:', error));
+    // }
 
     /*
     * ----------------------------------------------------------------------------

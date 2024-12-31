@@ -32,6 +32,29 @@
         <div class="modal-content">
             <span id="close-profile-modal" class="close-button">&times;</span>
             <h3 id="modal-child-name">Profile</h3>
+
+            <!-- Profile Photo Section -->
+            <div id="child-profile-photo-section">
+                <div id="profile-photo-container">
+                    <img id="child-profile-photo" class="profile-photo" src="./assets/default-profile.png" alt="Child's Profile Photo">
+                </div>
+                <div id="update-profile-photo-section" style="display: none;">
+                    <input type="file" id="child-photo-input" accept="image/*">
+                    <button id="update-profile-photo-button">Update Profile Photo</button>
+                </div>
+                
+            </div>
+
+            <!-- Profile Details -->
+            <div id="child-profile-details">
+                <h4>Child Information</h4>
+                <p>Date of Birth: <span id="child-dob">N/A</span></p>
+                <p>Allergies: <span id="child-allergies">N/A</span></p>
+            </div>
+
+            <div id="child-actions">
+                <button id="view-gallery-button">View Gallery</button>
+            </div>
     
             <div id="profile-diet-section">
                 <h4>Diet</h4>
@@ -56,6 +79,16 @@
                 <div class="history-preview"></div>
                 <button class="history-button" data-section="nappy" data-child-id="1">View Nappy History</button>
             </div>
+
+            <!-- Child Gallery Modal -->
+            <div id="child-gallery-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span id="close-gallery-modal" class="close-button">&times;</span>
+                    <h3>Child Gallery</h3>
+                    <div id="child-gallery" class="gallery-container"></div>
+                </div>
+            </div>
+
         </div>
     </div>
     
