@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 require '../config/db.php';
 require 'validate_jwt.php';
 
+
 // Validate JWT
 $headers = getallheaders();
 $authHeader = $headers['Authorization'] ?? '';

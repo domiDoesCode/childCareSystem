@@ -1,0 +1,94 @@
+/* General styling for the body */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f5d7c6, #f0ebe1);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Main container to center everything */
+main {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: center;
+}
+
+/* Style the register title */
+.register_title {
+    font-size: 28px;
+    color: #c97d62;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+/* Input fields styling with added padding */
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+/* Styling for the buttons */
+.regBtn,
+.backHomeBtn,
+.backLgnBtn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    background-color: #c97d62;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+/* Button hover effect */
+.regBtn:hover,
+.backHomeBtn:hover,
+.backLgnBtn:hover {
+    background-color: #b56b50;
+    transform: scale(1.05);
+}
+
+/* Adjust input and form alignment */
+label {
+    text-align: left;
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* Additional spacing */
+input[type="submit"] {
+    margin-top: 10px;
+}
+
+/* Button container styling */
+.button_container {
+    margin-top: 20px;
+}
+
+/* Secondary button styling for "Go Back to Login" and "Go Back to Home" */
+.secondary_button {
+    background-color: #e6bbad;
+    margin-top: 10px;
+}
+
+/* Secondary button hover effect */
+.secondary_button:hover {
+    background-color: #d4a393;
+}

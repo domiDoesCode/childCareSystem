@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const formData = new FormData(registerForm);
         
         // Make an AJAX request using Fetch API
-        fetch('api/register.php', {  // Make sure this points to the correct PHP file
+        fetch('../api/register.php', {  // Make sure this points to the correct PHP file
             method: 'POST',
             body: formData
         })

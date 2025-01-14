@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const token = localStorage.getItem('jwt');
         if (token) {
             // Validate the token by calling the validate_jwt.php endpoint
-            fetch('./api/validate_jwt.php', {
+            fetch('../api/validate_jwt.php', {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const formData = new FormData(loginForm);
 
         // Fetch request to the login.php API
-        fetch('./api/login.php', {
+        fetch('../api/login.php', {
             method: 'POST',
             body: formData
         })

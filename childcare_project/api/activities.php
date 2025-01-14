@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 require '../config/db.php';
 require 'validate_jwt.php';
 
+
 $headers = getallheaders();
 $authHeader = isset($headers['Authorization']) ? $headers['Authorization'] : '';
 
@@ -62,6 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 }
 // Handle POST requests to add new activity entries
 elseif ($_SERVER['REQUEST_METHOD'] == 'POST' && ($roleId == 1 || $roleId == 2)) {
+    
+    
     $childId = $_POST['child_id'] ?? null;
     $activityTypeId = $_POST['activity_type_id'] ?? null;
     $activityIds = $_POST['activity_ids'] ?? []; // This should be an array

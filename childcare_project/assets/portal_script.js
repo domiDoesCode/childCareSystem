@@ -8,8 +8,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const roomList = document.getElementById('room-list');
     const backToRoomsButton = document.getElementById('back-to-rooms');
 
-    
-
     // Decode JWT Token
     if (token) {
         try {
@@ -20,15 +18,6 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Error decoding token:', error);
         }
-    }
-
-    function checkUserRole(userRole, action = 'this action') {
-        if (userRole === 3) { // Assuming role 3 is 'parent'
-            alert(`You are not authorized to perform ${action}.`);
-            console.warn(`Access denied: User role 3 attempted to perform ${action}.`);
-            return false; // Deny access
-        }
-        return true; // Allow access
     }
 
     /** 
@@ -63,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * Fetch and display rooms.
      */
     showLoadingSpinner(); // Show the spinner before starting the fetch
-    fetch('./api/room_selection.php', {
+    fetch('../api/room_selection.php', {
         method: 'GET',
         headers: {
             Authorization: `Bearer ${token}`,
@@ -98,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch(`./api/children.php?room_id=${roomId}`, {
+        fetch(`../api/children.php?room_id=${roomId}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -119,15 +108,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Create a child card with profile functionality.
+     * Create a child card with profile and attendance functionality.
      */
     function createChildCard(child) {
         const childCard = document.createElement('div');
         childCard.className = 'child-card';
-
+    
         const childName = document.createElement('h3');
         childName.textContent = child.name;
         childCard.appendChild(childName);
+
+        // Attach child ID to the card for later reference
+        childCard.dataset.childId = child.id;
 
         // Add "View Profile" button
         const viewProfileButton = document.createElement('button');
@@ -135,30 +127,127 @@ document.addEventListener('DOMContentLoaded', function () {
         viewProfileButton.textContent = 'View Profile';
         viewProfileButton.addEventListener('click', () => showChildProfile(child.id, child.name));
         childCard.appendChild(viewProfileButton);
-
-        fadeInElement(childCard); // Apply fade-in animation to the card
+    
+        // Add attendance section
+        addAttendanceToChildCard(childCard, child);
+    
+        fadeInElement(childCard); // Add fade-in animation
         document.querySelector('#children-list').appendChild(childCard);
-
-        // Attach child ID to the card for later reference
-        childCard.dataset.childId = child.id;
-
-        // Append the child card to the children list
-        childrenList.appendChild(childCard);
     }
-
+    
     /**
      * Create a form container for the child.
      */
     function createChildForm(child) {
-        // if (section === 'dashboard') {
-        //     return; // Skip creating child forms for the dashboard
-        // }
-
         const formContainer = document.createElement('div');
         formContainer.className = 'child-form';
         formContainer.dataset.childId = child.id;
         formContainer.style.display = 'none'; // Hidden until a section is selected
         childrenList.appendChild(formContainer);
+    }
+
+    /**
+     * Add attendance section to a child card.
+     */
+    function addAttendanceToChildCard(childCard, child) {
+        const attendanceSection = document.createElement('div');
+        attendanceSection.className = 'attendance-section';
+    
+        const attendanceTitle = document.createElement('h4');
+        attendanceTitle.textContent = 'Attendance';
+        attendanceSection.appendChild(attendanceTitle);
+
+        // Absent Checkbox and Label Container
+        const absentContainer = document.createElement('div');
+        absentContainer.className = 'attendance-input-container'; // Flexbox container for alignment
+
+        const absentCheckbox = document.createElement('input');
+        absentCheckbox.type = 'checkbox';
+        absentCheckbox.id = `absent-checkbox-${child.id}`;
+        absentCheckbox.addEventListener('change', () => {
+            if (absentCheckbox.checked) {
+                // Clear time inputs when absent is checked
+                timeInInput.value = '';
+                timeOutInput.value = '';
+                timeInInput.disabled = true;
+                timeOutInput.disabled = true;
+            } else {
+                timeInInput.disabled = false;
+                timeOutInput.disabled = false;
+            }
+        });
+        const absentLabel = document.createElement('label');
+        absentLabel.textContent = 'Absent:';
+        absentLabel.htmlFor = `absent-checkbox-${child.id}`;
+        attendanceSection.appendChild(absentLabel);
+        attendanceSection.appendChild(absentCheckbox);
+    
+        const timeInLabel = document.createElement('label');
+        timeInLabel.textContent = 'Time In:';
+        attendanceSection.appendChild(timeInLabel);
+    
+        const timeInInput = document.createElement('input');
+        timeInInput.type = 'time';
+        timeInInput.id = `time-in-${child.id}`;
+        attendanceSection.appendChild(timeInInput);
+    
+        const timeOutLabel = document.createElement('label');
+        timeOutLabel.textContent = 'Time Out:';
+        attendanceSection.appendChild(timeOutLabel);
+    
+        const timeOutInput = document.createElement('input');
+        timeOutInput.type = 'time';
+        timeOutInput.id = `time-out-${child.id}`;
+        attendanceSection.appendChild(timeOutInput);
+    
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update Attendance';
+        updateButton.addEventListener('click', () => {
+            const timeIn = timeInInput.value || null;
+            const timeOut = timeOutInput.value || null;
+    
+            if (!timeIn && !timeOut) {
+                alert('Please provide at least one time (Time In or Time Out).');
+                return;
+            }
+    
+            const formData = new FormData();
+            formData.append('child_id', child.id);
+            if (timeIn) formData.append('time_in', timeIn);
+            if (timeOut) formData.append('time_out', timeOut);
+    
+            fetch('../api/attendance.php', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.status === 'success') {
+                        alert('Attendance updated successfully!');
+                    } else {
+                        alert(`Error updating attendance: ${data.error}`);
+                    }
+                })
+                .catch((error) => console.error('Error updating attendance:', error));
+        });
+        attendanceSection.appendChild(updateButton);
+    
+        // Fetch existing attendance data for today
+        fetch(`../api/attendance.php?child_id=${child.id}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success' && data.attendance) {
+                    if (data.attendance.time_in) timeInInput.value = data.attendance.time_in;
+                    if (data.attendance.time_out) timeOutInput.value = data.attendance.time_out;
+                }
+            })
+            .catch((error) => console.error('Error fetching attendance:', error));
+    
+        childCard.appendChild(attendanceSection);
     }
 
     /**
@@ -175,6 +264,8 @@ document.addEventListener('DOMContentLoaded', function () {
      * Toggle inputs inside each child form based on the selected section.
      */
     function toggleChildInputs(section) {
+        const backToChildCardsButton = document.getElementById('back-to-child-cards');
+        
         if (section === 'dashboard') {
             showDashboardModal();
             return; // Skip further processing for forms.
@@ -182,6 +273,11 @@ document.addEventListener('DOMContentLoaded', function () {
         
         const childCards = document.querySelectorAll('.child-card');
         childCards.forEach((childCard) => {
+            const attendanceSection = childCard.querySelector('.attendance-section');
+            if (attendanceSection) {
+                attendanceSection.style.display = section === 'attendance' ? 'block' : 'none';
+            }
+            
             const childId = childCard.dataset.childId; // Extract child ID from card
             if (!childId) {
                 console.error('Child ID is missing in the child card dataset.');
@@ -192,6 +288,14 @@ document.addEventListener('DOMContentLoaded', function () {
             let form = childCard.querySelector('.child-form');
             if (form) {
                 form.remove();
+            }
+
+            if (section === 'initial') {
+                // Reset to initial state by showing attendance and hiding forms
+                if (attendanceSection) {
+                    attendanceSection.style.display = 'block';
+                }
+                return;
             }
 
             // Create a new form
@@ -244,14 +348,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 submitForm(form, section);
             };
         });
+
+        // Show or hide the "Back to Child Cards" button
+        backToChildCardsButton.style.display = section === 'initial' ? 'none' : 'block';
     }
+
+    document.getElementById('back-to-child-cards').onclick = function () {
+        toggleChildInputs('initial');
+    };
 
     /**
      * Fetch and display recent entries for a specific section and child.
      */
     function fetchRecentEntries(section, childId, historyPreview) {
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch(`./api/${section}.php?child_id=${childId}`, {
+        fetch(`../api/${section}.php?child_id=${childId}`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -348,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Perform the POST requestž
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch(`./api/${section}.php?child_id=${childId}`, {
+        fetch(`../api/${section}.php?child_id=${childId}`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -411,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const allergiesField = document.getElementById('child-allergies');
 
         // Fetch child data including profile photo
-        fetch(`./api/children.php?child_id=${childId}`, {
+        fetch(`../api/children.php?child_id=${childId}`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -421,8 +532,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     const child = data.child;
 
                     profilePhoto.src = data.child.photo
-                        ? `./uploads/children/${data.child.photo}`
-                        : './assets/default-profile.png';
+                        ? `../uploads/children/${data.child.photo}`
+                        : '../uploads/default-profile.png';
+
                     // Date of Birth
                     dobField.textContent = `${child.date_of_birth || 'Not available'}`;
 
@@ -483,7 +595,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('photo', photoInput.files[0]);
         formData.append('child_id', childId);
     
-        fetch('./api/photos.php', {
+        fetch('../api/photos.php', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
             body: formData,
@@ -515,10 +627,18 @@ document.addEventListener('DOMContentLoaded', function () {
     
         const galleryModal = document.getElementById('child-gallery-modal');
         const galleryContainer = document.getElementById('child-gallery');
+        const uploadSection = document.getElementById('gallery-upload-section'); // Reference to the upload section
     
         galleryContainer.innerHTML = 'Loading...';
     
-        fetch(`./api/photos.php?child_id=${childId}&type=gallery`, {
+        // Check user role to show/hide the upload section
+        if (userRole === 1 || userRole === 2) {
+            uploadSection.style.display = 'block';
+        } else {
+            uploadSection.style.display = 'none';
+        }
+    
+        fetch(`../api/photos.php?child_id=${childId}&type=gallery`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -528,9 +648,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.photos && data.photos.length > 0) {
                     data.photos.forEach((photo) => {
                         const img = document.createElement('img');
-                        img.src = `./uploads/children/${photo.photo}`;
+                        img.src = `../uploads/children/${photo.photo}`;
                         img.alt = `Uploaded on ${photo.uploaded_at}`;
                         img.className = 'gallery-photo';
+
+                        // Add click event to enlarge photo
+                        img.onclick = function () {
+                            const modal = document.getElementById('enlarged-photo-modal');
+                            const enlargedPhoto = document.getElementById('enlarged-photo');
+                            enlargedPhoto.src = img.src;
+                            modal.style.display = 'flex';
+                        };
+
                         galleryContainer.appendChild(img);
                     });
                 } else {
@@ -540,6 +669,82 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch((error) => console.error('Error loading gallery:', error));
     
         galleryModal.style.display = 'block';
+    };
+    
+
+    /**
+     * Upload images to the Gallery
+     */
+    document.getElementById('add-gallery-photo-button').onclick = function () {
+        const photoInput = document.getElementById('gallery-photo-input');
+        const childId = document.getElementById('child-profile-modal').dataset.childId;
+    
+        if (!photoInput.files[0]) {
+            alert('Please select a photo to upload.');
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append('photo', photoInput.files[0]);
+        formData.append('child_id', childId);
+    
+        fetch(`../api/photos.php?child_id=${childId}&type=gallery`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    alert('Photo added to gallery!');
+                    loadGalleryPhotos(childId); // Reload gallery
+                } else {
+                    console.error('Error adding photo:', data.message);
+                    alert(`Failed to add photo: ${data.message}`);
+                }
+            })
+            .catch((error) => console.error('Error:', error));
+    };
+
+    function loadGalleryPhotos(childId) {
+        const galleryContainer = document.getElementById('child-gallery');
+        galleryContainer.innerHTML = 'Loading...';
+    
+        fetch(`../api/photos.php?child_id=${childId}&type=gallery`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                galleryContainer.innerHTML = '';
+                if (data.photos && data.photos.length > 0) {
+                    data.photos.forEach((photo) => {
+                        const img = document.createElement('img');
+                        img.src = `../uploads/children/${photo.photo}`;
+                        img.alt = `Uploaded on ${photo.uploaded_at}`;
+                        img.className = 'gallery-photo';
+    
+                        // Add click event to enlarge photo
+                        img.onclick = function () {
+                            const modal = document.getElementById('enlarged-photo-modal');
+                            const enlargedPhoto = document.getElementById('enlarged-photo');
+                            enlargedPhoto.src = img.src;
+                            modal.style.display = 'flex';
+                        };
+    
+                        galleryContainer.appendChild(img);
+                    });
+                } else {
+                    galleryContainer.textContent = 'No photos available.';
+                }
+            })
+            .catch((error) => console.error('Error loading gallery:', error));
+    }
+    
+    // Close enlarged photo modal
+    document.getElementById('close-enlarged-photo-modal').onclick = function () {
+        const modal = document.getElementById('enlarged-photo-modal');
+        modal.style.display = 'none';
     };
     
     // Close the gallery modal
@@ -573,7 +778,7 @@ document.addEventListener('DOMContentLoaded', function () {
         historyList.innerHTML = ''; // Clear previous content
 
         showLoadingSpinner(); // Show spinner while loading
-        fetch(`./api/${section}.php?child_id=${childId}`, {
+        fetch(`../api/${section}.php?child_id=${childId}`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -630,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Fetch meal types from the backend
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/meal_types.php', {
+        fetch('../api/meal_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -694,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function loadFoodItems(mealTypeId, selectElement) { 
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch(`./api/food_items.php?meal_type_id=${mealTypeId}`, {
+        fetch(`../api/food_items.php?meal_type_id=${mealTypeId}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -746,7 +951,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
         // Populate meal types dynamically
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/meal_types.php', {
+        fetch('../api/meal_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -789,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
     
             showLoadingSpinner(); // Show the spinner before starting the fetch
-            fetch('./api/food_items.php', {
+            fetch('../api/food_items.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
@@ -851,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Fetch activity types from the backend
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/activity_types.php', {
+        fetch('../api/activity_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -913,7 +1118,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function loadActivities(activityTypeId, selectElement) {
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch(`./api/activity_definitions.php?activity_type_id=${activityTypeId}`, {
+        fetch(`../api/activity_definitions.php?activity_type_id=${activityTypeId}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -959,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Populate activity types dynamically
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/activity_types.php', {
+        fetch('../api/activity_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1002,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showLoadingSpinner(); // Show the spinner before starting the fetch
-            fetch('./api/activity_definitions.php', {
+            fetch('../api/activity_definitions.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
@@ -1122,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function loadSymptoms(selectElement) {
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/symptoms.php', {
+        fetch('../api/symptoms.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1151,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function loadMedications(selectElement) {
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/medications.php', {
+        fetch('../api/medications.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1203,7 +1408,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showLoadingSpinner(); // Show the spinner before starting the fetch
-            fetch('./api/symptoms.php', {
+            fetch('../api/symptoms.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
@@ -1261,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showLoadingSpinner(); // Show the spinner before starting the fetch
-            fetch('./api/medications.php', {
+            fetch('../api/medications.php', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
@@ -1313,7 +1518,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
         // Load nappy types dynamically from the backend
         showLoadingSpinner(); // Show the spinner before starting the fetch
-        fetch('./api/nappy_types.php', {
+        fetch('../api/nappy_types.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1381,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadDietSummary() {
-        fetch('./api/diet_summary.php', {
+        fetch('../api/diet_summary.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1403,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadActivitiesSummary() {
-        fetch('./api/activities_summary.php', {
+        fetch('../api/activities_summary.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1426,7 +1631,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
 
     function loadHealthSummary() {
-        fetch('./api/health_summary.php', {
+        fetch('../api/health_summary.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1454,7 +1659,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     
     function loadNappySummary() {
-        fetch('./api/nappy_summary.php', {
+        fetch('../api/nappy_summary.php', {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1504,7 +1709,7 @@ document.addEventListener('DOMContentLoaded', function () {
         showLoadingSpinner(); // Show spinner while fetching data
     
         // Fetch data from the respective API
-        fetch(`./api/${section}_summary.php?details=true`, {
+        fetch(`../api/${section}_summary.php?details=true`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -1645,9 +1850,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /*
     * ----------------------------------------------------------------------------
+    * CHAT
+    * ----------------------------------------------------------------------------
+    */
+    
+    
+    /*
+    * ----------------------------------------------------------------------------
     * OTHER
     * ----------------------------------------------------------------------------
     */
+    function checkUserRole(userRole, action = 'this action') {
+        if (userRole === 3) { // Assuming role 3 is 'parent'
+            alert(`You are not authorized to perform ${action}.`);
+            console.warn(`Access denied: User role 3 attempted to perform ${action}.`);
+            return false; // Deny access
+        }
+        return true; // Allow access
+    }
+
     function showLoadingSpinner() {
         document.getElementById('loading-spinner').style.display = 'block';
     }

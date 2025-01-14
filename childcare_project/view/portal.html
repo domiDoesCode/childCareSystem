@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal</title>
+    <link rel="stylesheet" href="portal_style.css">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
+</head>
+<body>
+    <section class="menu_section" id="menu-section" style="display: none;">
+        <button class="menu-button" data-section="diet">Diet</button>
+        <button class="menu-button" data-section="activities">Activities</button>
+        <button class="menu-button" data-section="health">Health</button>
+        <button class="menu-button" data-section="nappy">Nappy</button>
+        <button id="view-dashboard-button" class="menu-button dashboard-button" data-section="dashboard">Dashboard</button>
+    </section>
+    
+    <section class="room_section" id="room-section">
+        <h2>Select a Room</h2>
+        <div id="room-list">Loading rooms...</div>
+    </section>
+    
+    <section class="data_section" id="data-section" style="display: none;">
+        <button id="back-to-rooms" style="display: block;">Back to Rooms</button>
+        <button id="back-to-child-cards" style="display: none;">Back to Child Cards</button>
+        <div id="children-list" class="children-list"></div>
+    </section>
+
+    <!-- Child Profile Modal -->
+    <div id="child-profile-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-profile-modal" class="close-button">&times;</span>
+            <h3 id="modal-child-name">Profile</h3>
+
+            <!-- Profile Photo Section -->
+            <div id="child-profile-photo-section">
+                <div id="profile-photo-container">
+                    <img id="child-profile-photo" class="profile-photo" src="../uploads/default-profile.png" alt="Child's Profile Photo">
+                </div>
+                <div id="update-profile-photo-section" style="display: none;">
+                    <input type="file" id="child-photo-input" accept="image/*">
+                    <button id="update-profile-photo-button">Update Profile Photo</button>
+                </div>
+                
+            </div>
+
+            <!-- Profile Details -->
+            <div id="child-profile-details">
+                <h4>Child Information</h4>
+                <p>Date of Birth: <span id="child-dob">N/A</span></p>
+                <p>Allergies: <span id="child-allergies">N/A</span></p>
+            </div>
+
+            <div id="child-actions">
+                <button id="view-gallery-button">View Gallery</button>
+            </div>
+    
+            <div id="profile-diet-section">
+                <h4>Diet</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="diet" data-child-id="1">View Diet History</button>
+            </div>
+    
+            <div id="profile-activities-section">
+                <h4>Activities</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="activities" data-child-id="1">View Activities History</button>
+            </div>
+    
+            <div id="profile-health-section">
+                <h4>Health</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="health" data-child-id="1">View Health History</button>
+            </div>
+    
+            <div id="profile-nappy-section">
+                <h4>Nappy</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="nappy" data-child-id="1">View Nappy History</button>
+            </div>
+
+            <!-- Child Gallery Modal -->
+            <div id="child-gallery-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span id="close-gallery-modal" class="close-button">&times;</span>
+                    <h3>Child Gallery</h3>
+                    <div id="child-gallery" class="gallery-container"></div>
+                    <div id="gallery-upload-section" style="display: none;">
+                        <input type="file" id="gallery-photo-input" accept="image/*">
+                        <button id="add-gallery-photo-button">Add Photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="enlarged-photo-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span id="close-enlarged-photo-modal" class="close-button">&times;</span>
+                    <img id="enlarged-photo" src="" alt="Enlarged View" style="width: 100%;">
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Add a new modal for detailed history -->
+    <div id="history-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-history-modal" class="close-button">&times;</span>
+            <h3 id="history-modal-title"></h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+    
+
+    <div id="add-food-item-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-food-item-modal" class="close-button">&times;</span>
+            <h3>Add Food Item</h3>
+            <form>
+                <!-- Food Item Name -->
+                <label for="food-item-name">Food Item Name:</label>
+                <input type="text" id="food-item-name" name="name" required>
+    
+                <!-- Meal Type Selection -->
+                <label for="meal-type-id">Select Meal Type (optional):</label>
+                <select id="meal-type-id" name="meal_type_id">
+                    <option value="">General (Available for All Meal Types)</option>
+                    <!-- Meal type options will be dynamically added here -->
+                </select>
+    
+                <!-- Submit Button -->
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    
+
+    <div id="add-activity-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-activity-modal" class="close-button">&times;</span>
+            <h3>Add Activity</h3>
+            <form>
+                <!-- Activity Name -->
+                <label for="activity-name">Activity Name:</label>
+                <input type="text" id="activity-name" name="name" required>
+    
+                <!-- Activity Type Selection -->
+                <label for="activity-type-id">Select Activity Type (optional):</label>
+                <select id="activity-type-id" name="activity_type_id">
+                    <option value="">General (Available for All Activity Types)</option>
+                    <!-- Activity type options will be dynamically added here -->
+                </select>
+    
+                <!-- Submit Button -->
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-health-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-health-modal" class="close-button">&times;</span>
+            <h3>Add Health Entry</h3>
+            <form>
+                <label for="temperature">Temperature (°C):</label>
+                <input type="number" id="temperature" name="temperature" required>
+    
+                <label for="symptoms">Symptoms:</label>
+                <select id="symptoms" name="symptom_ids[]" multiple></select>
+                <button type="button" id="add-symptom-button">+</button>
+    
+                <label for="medications">Medications:</label>
+                <select id="medications" name="medication_ids[]" multiple></select>
+                <button type="button" id="add-medication-button">+</button>
+    
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="add-symptom-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-symptom-modal" class="close-button">&times;</span>
+            <h3>Add Symptom</h3>
+            <form>
+                <label for="symptom-name">Symptom Name:</label>
+                <input type="text" id="symptom-name" name="name" required>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-medication-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-medication-modal" class="close-button">&times;</span>
+            <h3>Add Medication</h3>
+            <form>
+                <label for="medication-name">Medication Name:</label>
+                <input type="text" id="medication-name" name="name" required>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-dashboard-modal" class="close-button">&times;</span>
+            <h2>Dashboard Overview</h2>
+            <div id="dashboard-summary">
+                <div id="diet-summary">
+                    <h3>Diet Summary</h3>
+                    <ul id="diet-summary-list"></ul>
+                    <button class="view-details-button" data-section="diet">View Details</button>
+                </div>
+                <div id="activities-summary">
+                    <h3>Activity Summary</h3>
+                    <div id="activity-summary-details"></div>
+                    <button class="view-details-button" data-section="activities">View Details</button>
+                </div>
+                <div id="health-summary">
+                    <h3>Health Summary</h3>
+                    <div id="health-summary-details"></div>
+                    <button class="view-details-button" data-section="health">View Details</button>
+                </div>
+                <div id="nappy-summary">
+                    <h3>Nappy Summary</h3>
+                    <ul id="nappy-summary-list"></ul>
+                    <button class="view-details-button" data-section="nappy">View Details</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="details-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span id="close-details-modal" class="close-button">&times;</span>
+            <h3 id="details-modal-title">Details</h3>
+            <div id="details-list"></div>
+        </div>
+    </div>
+
+    <div id="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+
+    <script src="../assets/portal_script.js" type="module"></script>
+</body>
+</html>
