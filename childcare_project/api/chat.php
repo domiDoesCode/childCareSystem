@@ -23,39 +23,26 @@ if (!$decoded) {
 $userId = $decoded['userId'] ?? null;
 $roleId = $decoded['role'] ?? null;
 
-// Check the request method
+// Handle GET requests to fetch chat messages
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $roomId = $_GET['room_id'] ?? null;
     $parentId = $_GET['parent_id'] ?? null;
-    $type = $_GET['type'] ?? null; // "room", "private", or "gallery"
+    $type = $_GET['type'] ?? null; // "room" or "private"
+
+    if (!$roomId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Room ID is required']);
+        exit;
+    }
 
     if ($type === 'room') {
         // Fetch room chat messages
         $stmt = $conn->prepare("
-            SELECT room_chat.message, room_chat.photo, room_chat.sent_at, users.name AS sender_name
+            SELECT room_chat.message, room_chat.photo, room_chat.sent_at, users.email AS sender_name
             FROM room_chat
             JOIN users ON room_chat.sender_id = users.id
             WHERE room_chat.room_id = ?
             ORDER BY room_chat.sent_at ASC
-        ");
-        $stmt->bind_param("i", $roomId);
-    } elseif ($type === 'private' && $parentId) {
-        // Fetch private chat messages
-        $stmt = $conn->prepare("
-            SELECT private_chat.message, private_chat.photo, private_chat.sent_at, users.name AS sender_name
-            FROM private_chat
-            JOIN users ON private_chat.sender_id = users.id
-            WHERE private_chat.room_id = ? AND private_chat.parent_id = ?
-            ORDER BY private_chat.sent_at ASC
-        ");
-        $stmt->bind_param("ii", $roomId, $parentId);
-    } elseif ($type === 'gallery') {
-        // Fetch shared gallery photos
-        $stmt = $conn->prepare("
-            SELECT photo, uploaded_at
-            FROM shared_gallery
-            WHERE room_id = ?
-            ORDER BY uploaded_at DESC
         ");
         $stmt->bind_param("i", $roomId);
     } else {
@@ -76,10 +63,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $stmt->close();
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle POST requests to send messages
     $type = $_POST['type'] ?? null; // "room" or "private"
     $roomId = $_POST['room_id'] ?? null;
     $message = $_POST['message'] ?? null;
     $photo = $_FILES['photo']['name'] ?? null;
+
+    if (!$roomId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Room ID is required']);
+        exit;
+    }
 
     if (!$message && !$photo) {
         http_response_code(400);
@@ -87,25 +81,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
 
+    // Handle photo upload
+    $photoPath = null;
+    if ($photo) {
+        $targetDir = "../uploads/chat/";
+        $photoName = time() . "_" . basename($_FILES['photo']['name']);
+        $photoPath = $targetDir . $photoName;
+
+        // Validate and move the uploaded file
+        if (!move_uploaded_file($_FILES['photo']['tmp_name'], $photoPath)) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to upload photo']);
+            exit;
+        }
+
+        $photoPath = basename($photoPath); // Store only the filename in the database
+    }
+
     if ($type === 'room') {
         $stmt = $conn->prepare("
             INSERT INTO room_chat (room_id, sender_id, message, photo)
             VALUES (?, ?, ?, ?)
         ");
-        $stmt->bind_param("iiss", $roomId, $userId, $message, $photo);
-    } elseif ($type === 'private') {
-        $parentId = $_POST['parent_id'] ?? null;
-        if (!$parentId) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Parent ID is required for private messages']);
-            exit;
-        }
-
-        $stmt = $conn->prepare("
-            INSERT INTO private_chat (room_id, parent_id, sender_id, message, photo)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        $stmt->bind_param("iiiss", $roomId, $parentId, $userId, $message, $photo);
+        $stmt->bind_param("iiss", $roomId, $userId, $message, $photoPath);
     } else {
         http_response_code(400);
         echo json_encode(['error' => 'Invalid request parameters']);

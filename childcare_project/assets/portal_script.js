@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem('jwt');
+    let userId = null;
     let userRole = null;
+    let selectedRoomId = null;
     const menuSection = document.getElementById('menu-section');
     const roomSection = document.getElementById('room-section');
     const dataSection = document.getElementById('data-section');
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const decodedToken = JSON.parse(atob(token.split('.')[1]));
             userRole = decodedToken.data.role;
+            userId = decodedToken.data.userId;
             // Call this function after fetching the user's role during login
             adjustUIBasedOnRole(userRole);
         } catch (error) {
@@ -36,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function () {
     
         }
     }
-    
 
     /** 
      * Reset portal state to show room selection.
@@ -77,13 +79,21 @@ document.addEventListener('DOMContentLoaded', function () {
      * Load and display children for a room.
      */
     function loadChildrenForRoom(roomId) {
+        // Save the selected room ID globally
+        selectedRoomId = roomId;
+
         resetPortalState();
         roomSection.style.display = 'none';
         dataSection.style.display = 'block';
         menuSection.style.display = 'block';
 
+       // Show the chat bubble after room selection
+        const chatBubble = document.getElementById('chat-bubble');
+        chatBubble.style.display = 'block';
+
         backToRoomsButton.addEventListener('click', () => {
             resetPortalState();
+            chatBubble.style.display = 'none'; // Hide chat bubble when navigating back
         });
 
         showLoadingSpinner(); // Show the spinner before starting the fetch
@@ -121,6 +131,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Attach child ID to the card for later reference
         childCard.dataset.childId = child.id;
 
+        childCard.dataset.isAbsent = child.is_absent ? 'true' : 'false'; // Dynamically set absent status
+        childName.textContent = child.is_absent ? `${child.name} - ABSENT` : child.name; // Append "ABSENT" if marked
+        childCard.appendChild(childName);
+
+        if (child.is_absent) {
+            childCard.classList.add('absent'); // Apply absent styling
+        }
+
         // Add "View Profile" button
         const viewProfileButton = document.createElement('button');
         viewProfileButton.type = 'button'; // Avoid triggering form submission
@@ -133,6 +151,42 @@ document.addEventListener('DOMContentLoaded', function () {
     
         fadeInElement(childCard); // Add fade-in animation
         document.querySelector('#children-list').appendChild(childCard);
+
+        // Fetch attendance data for the child
+    fetch(`../api/attendance.php?child_id=${child.id}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === 'success' && data.attendance) {
+                const isAbsent = data.attendance.is_absent;
+
+                childCard.dataset.isAbsent = isAbsent; // Store absence status in dataset
+
+                // Update the child card name
+                if (isAbsent) {
+                    childName.textContent = `${child.name} - ABSENT`;
+
+                } else {
+                    childName.textContent = child.name;
+                }
+
+                // Hide or show forms based on attendance status
+                if (isAbsent) {
+                    childCard.classList.add('absent');
+                } else {
+                    childCard.classList.remove('absent');
+                }
+            } else {
+                childName.textContent = child.name; // Default to name only
+                childCard.dataset.isAbsent = false; // Default to not absent
+            }
+        })
+        .catch((error) => {
+            console.error('Error fetching attendance data:', error);
+            childName.textContent = child.name; // Fallback to name only
+        });
     }
     
     /**
@@ -164,23 +218,41 @@ document.addEventListener('DOMContentLoaded', function () {
         const absentCheckbox = document.createElement('input');
         absentCheckbox.type = 'checkbox';
         absentCheckbox.id = `absent-checkbox-${child.id}`;
+        absentCheckbox.disabled = userRole === 3; // Disable checkbox for parents
         absentCheckbox.addEventListener('change', () => {
-            if (absentCheckbox.checked) {
+            const isAbsent = absentCheckbox.checked;
+            
+            if (isAbsent) {
                 // Clear time inputs when absent is checked
                 timeInInput.value = '';
                 timeOutInput.value = '';
                 timeInInput.disabled = true;
                 timeOutInput.disabled = true;
+                childCard.querySelector('h3').textContent = `${child.name} - ABSENT`;
+                childCard.classList.add('absent'); // Apply absent CSS
+                
             } else {
                 timeInInput.disabled = false;
                 timeOutInput.disabled = false;
+                childCard.querySelector('h3').textContent = child.name;
+                childCard.classList.remove('absent'); // Remove absent CSS
+
+                // Validate inputs when checkbox is unchecked
+                if (!timeInInput.value && !timeOutInput.value) {
+                    alert('Please provide Time In or Time Out when marking the child as present.');
+                    return;
+                }
             }
+
+            // Update attendance in the database
+            //updateAttendance(child.id, isAbsent, null, null);
         });
         const absentLabel = document.createElement('label');
         absentLabel.textContent = 'Absent:';
         absentLabel.htmlFor = `absent-checkbox-${child.id}`;
         attendanceSection.appendChild(absentLabel);
         attendanceSection.appendChild(absentCheckbox);
+        attendanceSection.appendChild(absentContainer);
     
         const timeInLabel = document.createElement('label');
         timeInLabel.textContent = 'Time In:';
@@ -189,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const timeInInput = document.createElement('input');
         timeInInput.type = 'time';
         timeInInput.id = `time-in-${child.id}`;
+        timeInInput.disabled = userRole === 3; // Disable for parents
         attendanceSection.appendChild(timeInInput);
     
         const timeOutLabel = document.createElement('label');
@@ -198,40 +271,27 @@ document.addEventListener('DOMContentLoaded', function () {
         const timeOutInput = document.createElement('input');
         timeOutInput.type = 'time';
         timeOutInput.id = `time-out-${child.id}`;
+        timeOutInput.disabled = userRole === 3; // Disable for parents
         attendanceSection.appendChild(timeOutInput);
     
-        const updateButton = document.createElement('button');
-        updateButton.textContent = 'Update Attendance';
-        updateButton.addEventListener('click', () => {
-            const timeIn = timeInInput.value || null;
-            const timeOut = timeOutInput.value || null;
-    
-            if (!timeIn && !timeOut) {
-                alert('Please provide at least one time (Time In or Time Out).');
-                return;
-            }
-    
-            const formData = new FormData();
-            formData.append('child_id', child.id);
-            if (timeIn) formData.append('time_in', timeIn);
-            if (timeOut) formData.append('time_out', timeOut);
-    
-            fetch('../api/attendance.php', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${token}` },
-                body: formData,
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.status === 'success') {
-                        alert('Attendance updated successfully!');
-                    } else {
-                        alert(`Error updating attendance: ${data.error}`);
-                    }
-                })
-                .catch((error) => console.error('Error updating attendance:', error));
-        });
-        attendanceSection.appendChild(updateButton);
+        if (userRole === 1 || userRole === 2) {
+             // Update Button
+            const updateButton = document.createElement('button');
+            updateButton.textContent = 'Update Attendance';
+            updateButton.addEventListener('click', () => {
+                const timeIn = timeInInput.value || null;
+                const timeOut = timeOutInput.value || null;
+                const isAbsent = absentCheckbox.checked;
+
+                if (!isAbsent && !timeIn && !timeOut) {
+                    alert('Please provide at least one time (Time In or Time Out).');
+                    return;
+                }
+
+                updateAttendance(child.id, isAbsent, timeIn, timeOut);
+            });
+            attendanceSection.appendChild(updateButton);
+        }
     
         // Fetch existing attendance data for today
         fetch(`../api/attendance.php?child_id=${child.id}`, {
@@ -241,14 +301,73 @@ document.addEventListener('DOMContentLoaded', function () {
             .then((response) => response.json())
             .then((data) => {
                 if (data.status === 'success' && data.attendance) {
+                    absentCheckbox.checked = data.attendance.is_absent;
+                if (data.attendance.is_absent) {
+                    timeInInput.disabled = true;
+                    timeOutInput.disabled = true;
+                    childCard.querySelector('h3').textContent = `${child.name} - ABSENT`;
+                } else {
                     if (data.attendance.time_in) timeInInput.value = data.attendance.time_in;
                     if (data.attendance.time_out) timeOutInput.value = data.attendance.time_out;
                 }
+            }
             })
             .catch((error) => console.error('Error fetching attendance:', error));
     
         childCard.appendChild(attendanceSection);
     }
+
+    function updateAttendance(childId, isAbsent, timeIn, timeOut) {
+        // If child is not absent, ensure at least one time field is provided
+        if (!isAbsent && !timeIn && !timeOut) {
+            alert('Please provide at least one time (Time In or Time Out) for present children.');
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append('child_id', childId);
+        formData.append('is_absent', isAbsent ? 1 : 0);
+    
+        // Only append time_in and time_out if the child is present
+        if (!isAbsent) {
+            if (timeIn) formData.append('time_in', timeIn);
+            if (timeOut) formData.append('time_out', timeOut);
+        }
+    
+        fetch('../api/attendance.php', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    alert('Attendance updated successfully!');
+
+                    // Update UI based on attendance status
+                    const childCard = document.querySelector(`.child-card[data-child-id="${childId}"]`);
+                    if (childCard) {
+                        // Update the data-isAbsent attribute
+                        childCard.dataset.isAbsent = isAbsent ? 'true' : 'false';
+
+                        // Apply or remove absent styling
+                        if (isAbsent) {
+                            childCard.classList.add('absent');
+                        } else {
+                            childCard.classList.remove('absent');
+                        }
+
+                        // Update the UI for forms and absent messages
+                        toggleChildInputs('initial');
+                    }
+
+                } else {
+                    alert(`Error updating attendance: ${data.message}`);
+                }
+            })
+            .catch((error) => console.error('Error updating attendance:', error));
+    }
+    
 
     /**
      * Handle menu selection to toggle input fields.
@@ -274,6 +393,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const childCards = document.querySelectorAll('.child-card');
         childCards.forEach((childCard) => {
             const attendanceSection = childCard.querySelector('.attendance-section');
+            const isAbsent = childCard.dataset.isAbsent === 'true'; // Check absence status
+
             if (attendanceSection) {
                 attendanceSection.style.display = section === 'attendance' ? 'block' : 'none';
             }
@@ -293,10 +414,21 @@ document.addEventListener('DOMContentLoaded', function () {
             if (section === 'initial') {
                 // Reset to initial state by showing attendance and hiding forms
                 if (attendanceSection) {
-                    attendanceSection.style.display = 'block';
+                    attendanceSection.style.display = 'flex';
                 }
                 return;
             }
+
+            // Handle absent logic for this specific child
+        if (isAbsent) {
+            return; // Skip creating forms for this child
+        } else {
+            // Remove the absent message if it exists
+            const absentMessage = childCard.querySelector('.absent-message');
+            if (absentMessage) {
+                absentMessage.remove();
+            }
+        }
 
             // Create a new form
             form = document.createElement('form');
@@ -310,6 +442,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     break;
                 case 'activities':
                     createActivityInputs(form);
+                    break;
+                case 'sleep':
+                    createSleepInputs(form);
                     break;
                 case 'health':
                     createHealthInputs(form);
@@ -326,6 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Add fade-in effect to the form
             fadeInElement(form);
+        
 
             // Add recent entries preview
             const historyPreview = document.createElement('div');
@@ -336,11 +472,13 @@ document.addEventListener('DOMContentLoaded', function () {
             fetchRecentEntries(section, form.dataset.childId, historyPreview);
 
 
-            // Add submit button
-            const submitButton = document.createElement('button');
-            submitButton.type = 'submit';
-            submitButton.textContent = 'Submit';
-            form.appendChild(submitButton);
+            if (section != 'sleep') {
+                // Add submit button
+                const submitButton = document.createElement('button');
+                submitButton.type = 'submit';
+                submitButton.textContent = 'Submit';
+                form.appendChild(submitButton);
+            }
 
             // Add submit event
             form.onsubmit = (e) => {
@@ -414,6 +552,17 @@ document.addEventListener('DOMContentLoaded', function () {
     
             formData.append('meal_type_id', mealType);
             foodItems.forEach(item => formData.append('food_item_ids[]', item));
+        } else if (section === 'sleep') {
+            const sleepStart = form.querySelector('[name="sleep_start"]').value;
+            const sleepEnd = form.querySelector('[name="sleep_end"]').value;
+        
+            if (!sleepStart && !sleepEnd) {
+                alert('Please provide at least one time (Sleep Start or Sleep End).');
+                return;
+            }
+        
+            if (sleepStart) formData.append('sleep_start', sleepStart);
+            if (sleepEnd) formData.append('sleep_end', sleepEnd);
         } else if (section === 'activities') {
             const activityType = form.querySelector('[name="activity_type"]').value;
             const activities = Array.from(form.querySelector('[name="activities[]"]').selectedOptions).map(opt => opt.value);
@@ -500,6 +649,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `Meal: ${entry.meal_type}, Food: ${entry.food_items}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
             case 'activities':
                 return `Activity Type: ${entry.activity_type}, Activity: ${entry.activities}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
+            case 'sleep':
+                const start = entry.sleep_start
+                    ? new Date(entry.sleep_start).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                    : 'N/A';
+                const end = entry.sleep_end
+                    ? new Date(entry.sleep_end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                    : 'N/A';
+                return `Sleep Start: ${start}, Sleep End: ${end}, Duration: ${entry.duration || 0} minutes`;  
             case 'health':
                 return `Temp: ${entry.temperature}°C, Symptoms: ${entry.symptoms || 'None'}, Medication: ${entry.medications || 'None'}, Date: ${new Date(entry.date_recorded).toLocaleString()}`;
             case 'nappy':
@@ -556,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-        ['diet', 'activities', 'health', 'nappy'].forEach((section) => {
+        ['diet', 'activities', 'sleep', 'health', 'nappy'].forEach((section) => {
             const historyPreview = document.querySelector(`#profile-${section}-section .history-preview`);
             fetchRecentEntries(section, childId, historyPreview); // Use fetchRecentEntries for recent entries
         });
@@ -919,12 +1076,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     console.warn('No food items found');
                 }
-
-                // // Automatically set the meal type in the general form  WAS CAUSING AND ERROR TO BE LOGGED WHICH DID NOT PREVENT ANY FUNCTIONALITY BUT IT WAS LOGGED
-                // const mealTypeSelect = selectElement.closest('form').querySelector('select[name="meal_type"]');
-                // if (mealTypeSelect) {
-                //     mealTypeSelect.value = mealTypeId; // Update the meal type selection
-                // }
             })
             .catch((error) => console.error('Error fetching food items:', error))
             .finally(() => {
@@ -1243,6 +1394,104 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('close-activity-modal').onclick = function () {
         document.getElementById('add-activity-modal').style.display = 'none';
     };
+
+    /*
+    * ----------------------------------------------------------------------------
+    * SLEEP
+    * ----------------------------------------------------------------------------
+    */
+
+/**
+ * Create inputs for the sleep section.
+ */
+function createSleepInputs(form) {
+    form.innerHTML = ''; // Clear previous inputs
+
+    const sleepSection = document.createElement('div');
+    sleepSection.className = 'sleep-section';
+
+    // Sleep Start Row
+    const sleepStartRow = document.createElement('div');
+    sleepStartRow.className = 'sleep-row';
+
+    const sleepStartLabel = document.createElement('label');
+    sleepStartLabel.textContent = 'Sleep Start:';
+    sleepStartRow.appendChild(sleepStartLabel);
+
+    const sleepStartTime = document.createElement('input');
+    sleepStartTime.type = 'time';
+    sleepStartTime.name = 'sleep_start';
+    sleepStartTime.readOnly = true;
+    sleepStartRow.appendChild(sleepStartTime);
+
+    const sleepStartButton = document.createElement('button');
+    sleepStartButton.type = 'button';
+    sleepStartButton.textContent = 'Start Sleep';
+    sleepStartButton.addEventListener('click', () => {
+        const now = new Date();
+        const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:mm (24-hour format)
+        sleepStartTime.value = timeString;
+
+        // Auto-submit sleep start
+        submitForm(form, 'sleep');
+    });
+    sleepStartRow.appendChild(sleepStartButton);
+
+    sleepSection.appendChild(sleepStartRow);
+
+    // Sleep End Row
+    const sleepEndRow = document.createElement('div');
+    sleepEndRow.className = 'sleep-row';
+
+    const sleepEndLabel = document.createElement('label');
+    sleepEndLabel.textContent = 'Sleep End:';
+    sleepEndRow.appendChild(sleepEndLabel);
+
+    const sleepEndTime = document.createElement('input');
+    sleepEndTime.type = 'time';
+    sleepEndTime.name = 'sleep_end';
+    sleepEndTime.readOnly = true;
+    sleepEndRow.appendChild(sleepEndTime);
+
+    const sleepEndButton = document.createElement('button');
+    sleepEndButton.type = 'button';
+    sleepEndButton.textContent = 'End Sleep';
+    sleepEndButton.addEventListener('click', () => {
+        const now = new Date();
+        const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:mm (24-hour format)
+        sleepEndTime.value = timeString;
+
+        // Auto-submit sleep end
+        submitForm(form, 'sleep');
+    });
+    sleepEndRow.appendChild(sleepEndButton);
+
+    sleepSection.appendChild(sleepEndRow);
+
+    // Pre-populate fields if sleep data exists
+    fetch(`../api/sleep.php?child_id=${form.dataset.childId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === 'success' && data.sleep && data.sleep.length > 0) {
+                const latestEntry = data.sleep[0];
+                if (latestEntry.sleep_start) {
+                    const startTime = new Date(latestEntry.sleep_start).toISOString().substring(11, 16); // Format HH:mm
+                    sleepStartTime.value = startTime;
+                }
+                if (latestEntry.sleep_end) {
+                    const endTime = new Date(latestEntry.sleep_end).toISOString().substring(11, 16); // Format HH:mm
+                    sleepEndTime.value = endTime;
+                }
+            }
+        })
+        .catch((error) => console.error('Error fetching sleep data:', error));
+
+    // Append sleep section to the form
+    form.appendChild(sleepSection);
+}
 
     /*
     * ----------------------------------------------------------------------------
@@ -1571,6 +1820,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Call all summary functions with error handling
         Promise.allSettled([
             loadDietSummary(),
+            loadSleepSummary(),
             loadActivitiesSummary(),
             loadHealthSummary(),
             loadNappySummary(),
@@ -1606,6 +1856,41 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch((error) => console.error('Error fetching diet summary:', error));
     }
+
+    /**
+     * Load and display sleep summary.
+     */
+    function loadSleepSummary() {
+        fetch('../api/sleep_summary.php', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const sleepContainer = document.getElementById('sleep-summary-details');
+                sleepContainer.innerHTML = ''; // Clear previous summary
+
+                if (data.summary && data.summary.length > 0) {
+                    data.summary.forEach((entry) => {
+                        const sleepDiv = document.createElement('div');
+                        sleepDiv.className = 'sleep-summary-entry';
+
+                        // Format total sleep duration and entries
+                        const childName = entry.child_name;
+                        const totalEntries = entry.total_entries || 0;
+                        const totalDuration = entry.total_duration || 0; // Total duration in minutes
+
+                        sleepDiv.textContent = `${childName}: ${totalEntries} entries, Total Sleep Duration: ${totalDuration} minutes`;
+                        sleepContainer.appendChild(sleepDiv);
+                    });
+                } else {
+                    sleepContainer.textContent = 'No sleep entries recorded today.';
+                }
+            })
+            .catch((error) => console.error('Error fetching sleep summary:', error));
+    }
+
+    
 
     function loadActivitiesSummary() {
         fetch('../api/activities_summary.php', {
@@ -1762,6 +2047,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <strong>Food Item:</strong> ${entry.food_item || 'N/A'}<br>
                     <strong>Date:</strong> ${new Date(entry.date_recorded).toLocaleString()}
                 `;
+            case 'sleep':
+                return `
+                    <strong>Sleep Start:</strong> ${entry.sleep_start ? new Date(entry.sleep_start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
+                    <strong>Sleep End:</strong> ${entry.sleep_end ? new Date(entry.sleep_end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
+                    <strong>Duration:</strong> ${entry.duration ? `${entry.duration} minutes` : 'N/A'}<br>
+                    <strong>Date:</strong> ${new Date(entry.sleep_start).toLocaleDateString()}
+                `;
             case 'activities':
                 return `
                     <strong>Activity Type:</strong> ${entry.activity_type || 'N/A'}<br>
@@ -1784,75 +2076,165 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `<strong>Data:</strong> ${JSON.stringify(entry)}`;
         }
     }
-    
-    
+
     
     // Event listener to close the details modal
     document.getElementById('close-details-modal').onclick = function () {
         const modal = document.getElementById('details-modal');
         modal.style.display = 'none';
     };
-    
-    /*
-    * ----------------------------------------------------------------------------
-    * MEDIA UPLOADS
-    * ----------------------------------------------------------------------------
-    */
-
-    // function uploadChildPhoto(childId) {
-    //     const fileInput = document.getElementById('child-photo-input');
-    //     const formData = new FormData();
-    //     formData.append('photo', fileInput.files[0]);
-    //     formData.append('child_id', childId);
-    //     formData.append('type', 'profile'); // Specify profile photo upload
-    
-    //     fetch('./api/photos.php', {
-    //         method: 'POST',
-    //         headers: { Authorization: `Bearer ${token}` },
-    //         body: formData,
-    //     })
-    //         .then((response) => response.json())
-    //         .then((data) => {
-    //             if (data.status === 'success') {
-    //                 alert('Profile photo uploaded successfully!');
-    //                 document.getElementById('child-photo').src = `./uploads/children/${fileInput.files[0].name}`;
-    //             } else {
-    //                 alert(`Error: ${data.message}`);
-    //             }
-    //         })
-    //         .catch((error) => console.error('Error uploading profile photo:', error));
-    // }
-    
-
-    // function loadChildGallery(childId) {
-    //     fetch(`./api/photos.php?child_id=${childId}&type=gallery`, {
-    //         method: 'GET',
-    //         headers: { Authorization: `Bearer ${token}` },
-    //     })
-    //         .then((response) => response.json())
-    //         .then((data) => {
-    //             const galleryContainer = document.getElementById('child-gallery');
-    //             galleryContainer.innerHTML = '';
-    //             if (data.photos && data.photos.length > 0) {
-    //                 data.photos.forEach((photo) => {
-    //                     const img = document.createElement('img');
-    //                     img.src = `./uploads/children/${photo.photo}`;
-    //                     img.alt = `Uploaded on ${photo.uploaded_at}`;
-    //                     img.className = 'gallery-photo';
-    //                     galleryContainer.appendChild(img);
-    //                 });
-    //             } else {
-    //                 galleryContainer.textContent = 'No photos available.';
-    //             }
-    //         })
-    //         .catch((error) => console.error('Error loading gallery:', error));
-    // }
 
     /*
     * ----------------------------------------------------------------------------
     * CHAT
     * ----------------------------------------------------------------------------
     */
+   
+    // Event listeners for chat modal   
+    document.getElementById('chat-bubble').addEventListener('click', openChatModal);
+    document.getElementById('close-chat-modal').addEventListener('click', closeChatModal);
+    document.getElementById('room-chat-tab').addEventListener('click', () => showChatSection('room'));
+    document.getElementById('send-room-message').addEventListener('click', () => sendMessage('room'));
+    
+    function openChatModal() {
+        const modal = document.getElementById('chat-modal');
+        modal.style.display = 'block';
+        showChatSection('room'); // Default to room chat
+    }
+    
+    function closeChatModal() {
+        const modal = document.getElementById('chat-modal');
+        modal.style.display = 'none';
+    }
+    
+    // Switch between chat sections (Room Chat or Private Chat)
+    function showChatSection(section) {
+        document.querySelectorAll('.chat-section').forEach((sec) => {
+            sec.style.display = 'none';
+        });
+    
+        const activeSection = document.getElementById(`${section}-chat-section`);
+        activeSection.style.display = 'block';
+    
+        if (section === 'room') {
+            fetchChatMessages('room', selectedRoomId);
+        } else if (section === 'private') {
+            fetchChatMessages('private', selectedRoomId, userId);
+        }
+    
+        // Update active tab styling
+        document.querySelectorAll('.chat-tab').forEach((tab) => {
+            tab.classList.remove('active');
+        });
+    
+        const activeTab = document.getElementById(`${section}-chat-tab`);
+        activeTab.classList.add('active');
+    }
+    
+    function fetchChatMessages(type, selectedRoomId, parentId = null) {
+        if (!selectedRoomId) {
+            console.error('Room ID is missing. Cannot fetch chat messages.');
+            return;
+        }
+    
+        let url = `../api/chat.php?type=${type}&room_id=${selectedRoomId}`;
+        if (type === 'private' && parentId) {
+            url += `&parent_id=${parentId}`;
+        }
+    
+        fetch(url, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                const chatContainer = document.getElementById(
+                    type === 'room' ? 'room-chat-messages' : 'private-chat-messages'
+                );
+                chatContainer.innerHTML = '';
+    
+                if (data.status === 'success' && data.data.length > 0) {
+                    data.data.forEach((msg) => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = 'chat-message';
+    
+                        messageDiv.innerHTML = `<strong>${msg.sender_name}</strong>: ${
+                            msg.message || ''
+                        }`;
+    
+                        if (msg.photo) {
+                            const img = document.createElement('img');
+                            img.src = `./uploads/chat/${msg.photo}`;
+                            img.alt = 'Shared photo';
+                            img.className = 'chat-photo';
+                            messageDiv.appendChild(img);
+                        }
+    
+                        chatContainer.appendChild(messageDiv);
+                    });
+                } else {
+                    chatContainer.textContent = 'No messages found.';
+                }
+            })
+            .catch((error) => console.error('Error fetching messages:', error));
+    }
+    
+
+    function sendMessage(type) {
+        const messageInput = document.getElementById(
+            type === 'room' ? 'room-chat-input' : 'private-chat-input'
+        );
+        const mediaInput = document.getElementById('room-chat-media');
+        const message = messageInput.value.trim();
+        const media = mediaInput.files[0];
+
+        if (!message && !media) {
+            alert('Please enter a message or select a file.');
+            return;
+        }
+    
+        if (!message) {
+            alert('Please enter a message.');
+            return;
+        }
+    
+        if (!selectedRoomId) {
+            console.error('Room ID is not set.');
+            alert('No room selected. Please select a room first.');
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append('type', type); // Add type field
+        formData.append('message', message);
+        formData.append('room_id', selectedRoomId); // Add room_id
+        if (media) {
+            formData.append('photo', media);
+        }
+    
+        console.log('FormData being sent:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+    
+        fetch('../api/chat.php', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    messageInput.value = ''; // Clear the input field
+                    mediaInput.value = ''; // Clear the media input
+                    showChatSection(type); // Refresh the chat
+                } else {
+                    console.error('API error:', data);
+                    alert(`Error sending message: ${data.error}`);
+                }
+            })
+            .catch((error) => console.error('Error sending message:', error));
+    }
     
     
     /*

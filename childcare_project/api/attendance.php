@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     $stmt = $conn->prepare("
-        SELECT time_in, time_out 
+        SELECT time_in, time_out, is_absent
         FROM attendance 
         WHERE child_id = ? AND date = CURDATE()
     ");
@@ -55,33 +55,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $childId = $_POST['child_id'] ?? null;
     $timeIn = $_POST['time_in'] ?? null;
     $timeOut = $_POST['time_out'] ?? null;
+    $isAbsent = isset($_POST['is_absent']) ? (bool)$_POST['is_absent'] : null;
 
-    if (!$childId || (!$timeIn && !$timeOut)) {
+    if (!$childId) {
         http_response_code(400);
-        echo json_encode(['error' => 'Child ID and at least one time (Time In or Time Out) are required']);
+        echo json_encode(['status' => 'error', 'message' => 'Child ID is required.']);
         exit;
     }
 
-    $stmt = $conn->prepare("
-        INSERT INTO attendance (child_id, date, time_in, time_out)
-        VALUES (?, CURDATE(), ?, ?)
-        ON DUPLICATE KEY UPDATE 
-        time_in = COALESCE(VALUES(time_in), time_in),
-        time_out = COALESCE(VALUES(time_out), time_out)
-    ");
-    $stmt->bind_param('iss', $childId, $timeIn, $timeOut);
+    try {
+        // Check if attendance for the child already exists for today
+        $stmt = $conn->prepare("
+            SELECT id, time_in, time_out 
+            FROM attendance 
+            WHERE child_id = ? AND DATE(date) = CURDATE()
+        ");
+        $stmt->bind_param("i", $childId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $existingAttendance = $result->fetch_assoc();
 
-    if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'Attendance logged successfully']);
-    } else {
+        if ($result->num_rows > 0) {
+            // Update existing attendance entry
+            $attendanceId = $existingAttendance['id'];
+
+            if (!$timeIn) $timeIn = $existingAttendance['time_in']; // Retain existing time_in
+            if (!$timeOut) $timeOut = $existingAttendance['time_out']; // Retain existing time_out
+
+            $stmt = $conn->prepare("
+                UPDATE attendance 
+                SET time_in = ?, time_out = ?, is_absent = ?, date = NOW() 
+                WHERE id = ?
+            ");
+            $stmt->bind_param("ssii", $timeIn, $timeOut, $isAbsent, $attendanceId);
+        } else {
+            // Insert new attendance entry
+            $stmt = $conn->prepare("
+                INSERT INTO attendance (child_id, time_in, time_out, is_absent, date) 
+                VALUES (?, ?, ?, ?, NOW())
+            ");
+            $stmt->bind_param("issi", $childId, $timeIn, $timeOut, $isAbsent);
+        }
+
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Attendance logged successfully']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to log attendance']);
+        }
+
+        $stmt->close();
+    } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to log attendance']);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update attendance', 'details' => $e->getMessage()]);
+    } finally {
+        $conn->close();
     }
-
-    $stmt->close();
-} else {
-    http_response_code(405);
-    echo json_encode(['error' => 'Invalid request method']);
 }
-
-$conn->close();

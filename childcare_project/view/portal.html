@@ -12,6 +12,7 @@
     <section class="menu_section" id="menu-section" style="display: none;">
         <button class="menu-button" data-section="diet">Diet</button>
         <button class="menu-button" data-section="activities">Activities</button>
+        <button class="menu-button" data-section="sleep">Sleep</button>
         <button class="menu-button" data-section="health">Health</button>
         <button class="menu-button" data-section="nappy">Nappy</button>
         <button id="view-dashboard-button" class="menu-button dashboard-button" data-section="dashboard">Dashboard</button>
@@ -63,11 +64,17 @@
                 <button class="history-button" data-section="diet" data-child-id="1">View Diet History</button>
             </div>
     
+            <div id="profile-sleep-section">
+                <h4>Activities</h4>
+                <div class="history-preview"></div>
+                <button class="history-button" data-section="sleep" data-child-id="1">View Sleep History</button>
+            </div>
+
             <div id="profile-activities-section">
                 <h4>Activities</h4>
                 <div class="history-preview"></div>
                 <button class="history-button" data-section="activities" data-child-id="1">View Activities History</button>
-            </div>
+            </div>           
     
             <div id="profile-health-section">
                 <h4>Health</h4>
@@ -215,6 +222,11 @@
                     <ul id="diet-summary-list"></ul>
                     <button class="view-details-button" data-section="diet">View Details</button>
                 </div>
+                <div id="sleep-summary">
+                    <h3>Sleep Summary</h3>
+                    <div id="sleep-summary-details"></div>
+                    <button class="view-details-button" data-section="sleep">View Details</button>
+                </div>
                 <div id="activities-summary">
                     <h3>Activity Summary</h3>
                     <div id="activity-summary-details"></div>
@@ -241,6 +253,33 @@
             <div id="details-list"></div>
         </div>
     </div>
+
+    <div id="chat-bubble" class="chat-bubble" style="display: none;">💬</div>
+
+    <!-- Chat Modal -->
+    <div id="chat-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button id="close-chat-modal" class="close-button">Close</button>
+            <h2>Chat</h2>
+            
+            <!-- Chat Tabs -->
+            <div class="chat-tabs">
+                <button id="room-chat-tab" class="chat-tab active">Room Chat</button>
+            </div>
+    
+            <!-- Chat Sections -->
+            <div id="room-chat-section" class="chat-section">
+                <div id="room-chat-messages" class="chat-messages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="room-chat-input" placeholder="Type a message" />
+                    <input type="file" id="room-chat-media" accept="image/*" />
+                    <button id="send-room-message" class="send-button">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
 
     <div id="loading-spinner" style="display: none;">
         <div class="spinner"></div>
