@@ -1,5 +1,5 @@
 <?php
-require '../vendor/autoload.php'; // Use Firebase JWT library or similar
+require '../vendor/autoload.php'; // Firebase JWT library
 use \Firebase\JWT\JWT;
 
 $secretKey = 'your_secret_key';

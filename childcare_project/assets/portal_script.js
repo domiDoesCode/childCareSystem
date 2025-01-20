@@ -24,13 +24,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /** 
-     * If User is a Parent, restric their view.
+     * View restriction for parents
      */
     function adjustUIBasedOnRole(role) {
         const menuButtons = document.querySelectorAll('.menu-button');
     
-        if (role === 3) { // Parent role
-            // Hide all menu buttons except Dashboard
+        if (role === 3) { // 3 represents the Parent role
+            // Hide all menu buttons except the Dashboard
             menuButtons.forEach((btn) => {
                 if (btn.dataset.section !== 'dashboard') {
                     btn.style.display = 'none';
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /** 
-     * Reset portal state to show room selection.
+     * Helper function - Reset portal state to show room selection
      */
     function resetPortalState() {
         menuSection.style.display = 'none';
@@ -51,9 +51,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Fetch and display rooms.
+     * Fetch and display rooms
      */
-    showLoadingSpinner(); // Show the spinner before starting the fetch
+    showLoadingSpinner(); // Helper function - loading Spinner before fetch
     fetch('../api/room_selection.php', {
         method: 'GET',
         headers: {
@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then((data) => {
             roomList.innerHTML = '';
             data.rooms.forEach((room) => {
+                // for each room found in the DB create a room button
                 const roomButton = document.createElement('button');
                 roomButton.textContent = room.name;
                 roomButton.addEventListener('click', () => loadChildrenForRoom(room.id));
@@ -72,11 +73,11 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch((error) => console.error('Error fetching rooms:', error))
         .finally(() => {
-            hideLoadingSpinner(); // Always hide the spinner after submission
+            hideLoadingSpinner(); // Helper function - hide the spinner after submission
         });
 
     /**
-     * Load and display children for a room.
+     * Load and display children for a room
      */
     function loadChildrenForRoom(roomId) {
         // Save the selected room ID globally
@@ -113,12 +114,12 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch((error) => console.error('Error loading children:', error))
             .finally(() => {
-                hideLoadingSpinner(); // Always hide the spinner after submission
+                hideLoadingSpinner(); //  hide the spinner after submission
             });
     }
 
     /**
-     * Create a child card with profile and attendance functionality.
+     * Create a child card with profile and attendance sections
      */
     function createChildCard(child) {
         const childCard = document.createElement('div');
@@ -132,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
         childCard.dataset.childId = child.id;
 
         childCard.dataset.isAbsent = child.is_absent ? 'true' : 'false'; // Dynamically set absent status
-        childName.textContent = child.is_absent ? `${child.name} - ABSENT` : child.name; // Append "ABSENT" if marked
+        childName.textContent = child.is_absent ? `${child.name} - ABSENT` : child.name; // Add "ABSENT" if marked
         childCard.appendChild(childName);
 
         if (child.is_absent) {
@@ -141,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Add "View Profile" button
         const viewProfileButton = document.createElement('button');
-        viewProfileButton.type = 'button'; // Avoid triggering form submission
+        viewProfileButton.type = 'button';
         viewProfileButton.textContent = 'View Profile';
         viewProfileButton.addEventListener('click', () => showChildProfile(child.id, child.name));
         childCard.appendChild(viewProfileButton);
@@ -153,44 +154,44 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('#children-list').appendChild(childCard);
 
         // Fetch attendance data for the child
-    fetch(`../api/attendance.php?child_id=${child.id}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${token}` },
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.status === 'success' && data.attendance) {
-                const isAbsent = data.attendance.is_absent;
-
-                childCard.dataset.isAbsent = isAbsent; // Store absence status in dataset
-
-                // Update the child card name
-                if (isAbsent) {
-                    childName.textContent = `${child.name} - ABSENT`;
-
-                } else {
-                    childName.textContent = child.name;
-                }
-
-                // Hide or show forms based on attendance status
-                if (isAbsent) {
-                    childCard.classList.add('absent');
-                } else {
-                    childCard.classList.remove('absent');
-                }
-            } else {
-                childName.textContent = child.name; // Default to name only
-                childCard.dataset.isAbsent = false; // Default to not absent
-            }
+        fetch(`../api/attendance.php?child_id=${child.id}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
         })
-        .catch((error) => {
-            console.error('Error fetching attendance data:', error);
-            childName.textContent = child.name; // Fallback to name only
-        });
-    }
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success' && data.attendance) {
+                    const isAbsent = data.attendance.is_absent;
+
+                    childCard.dataset.isAbsent = isAbsent; // Store absence status in dataset
+
+                    // Update the child card name
+                    if (isAbsent) {
+                        childName.textContent = `${child.name} - ABSENT`;
+
+                    } else {
+                        childName.textContent = child.name;
+                    }
+
+                    // Hide or show forms based on attendance status
+                    if (isAbsent) {
+                        childCard.classList.add('absent');
+                    } else {
+                        childCard.classList.remove('absent');
+                    }
+                } else {
+                    childName.textContent = child.name; // Default to name only
+                    childCard.dataset.isAbsent = false; // Default to not absent
+                }
+            })
+            .catch((error) => {
+                console.error('Error fetching attendance data:', error);
+                childName.textContent = child.name; // If error remove the ABSENT from the name
+            });
+        }
     
     /**
-     * Create a form container for the child.
+     * Helper function - Create a form container for the child
      */
     function createChildForm(child) {
         const formContainer = document.createElement('div');
@@ -201,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Add attendance section to a child card.
+     * Add attendance section to a child card
      */
     function addAttendanceToChildCard(childCard, child) {
         const attendanceSection = document.createElement('div');
@@ -213,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Absent Checkbox and Label Container
         const absentContainer = document.createElement('div');
-        absentContainer.className = 'attendance-input-container'; // Flexbox container for alignment
+        absentContainer.className = 'attendance-input-container';
 
         const absentCheckbox = document.createElement('input');
         absentCheckbox.type = 'checkbox';
@@ -223,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const isAbsent = absentCheckbox.checked;
             
             if (isAbsent) {
-                // Clear time inputs when absent is checked
+                // Clear time inputs and disable them when absent is checked
                 timeInInput.value = '';
                 timeOutInput.value = '';
                 timeInInput.disabled = true;
@@ -243,9 +244,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
             }
-
-            // Update attendance in the database
-            //updateAttendance(child.id, isAbsent, null, null);
         });
         const absentLabel = document.createElement('label');
         absentLabel.textContent = 'Absent:';
@@ -347,7 +345,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Update UI based on attendance status
                     const childCard = document.querySelector(`.child-card[data-child-id="${childId}"]`);
                     if (childCard) {
-                        // Update the data-isAbsent attribute
+                        // Update the isAbsent attribute
                         childCard.dataset.isAbsent = isAbsent ? 'true' : 'false';
 
                         // Apply or remove absent styling
@@ -370,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
 
     /**
-     * Handle menu selection to toggle input fields.
+     * When a menu btn is selected call the toggleChildInput
      */
     menuSection.addEventListener('click', (e) => {
         if (e.target.classList.contains('menu-button')) {
@@ -380,14 +378,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /**
-     * Toggle inputs inside each child form based on the selected section.
+     * Toggle inputs inside each child form based on the selected section
      */
     function toggleChildInputs(section) {
         const backToChildCardsButton = document.getElementById('back-to-child-cards');
         
         if (section === 'dashboard') {
             showDashboardModal();
-            return; // Skip further processing for forms.
+            return; // Skip further processing for forms
         }
         
         const childCards = document.querySelectorAll('.child-card');
@@ -420,15 +418,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Handle absent logic for this specific child
-        if (isAbsent) {
-            return; // Skip creating forms for this child
-        } else {
-            // Remove the absent message if it exists
-            const absentMessage = childCard.querySelector('.absent-message');
-            if (absentMessage) {
-                absentMessage.remove();
-            }
-        }
+            if (isAbsent) {
+                return; // Skip creating forms for this child
+            } 
 
             // Create a new form
             form = document.createElement('form');
@@ -606,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     
 
-        // Perform the POST requestž
+        // Perform the POST request
         showLoadingSpinner(); // Show the spinner before starting the fetch
         fetch(`../api/${section}.php?child_id=${childId}`, {
             method: 'POST',
@@ -739,6 +731,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const photoInput = document.getElementById('child-photo-input');
         const childId = document.getElementById('child-profile-modal').dataset.childId;
     
+        // If photo is absent
         if (!photoInput.files[0]) {
             alert('Please select a photo to upload.');
             return;
@@ -761,6 +754,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then((data) => {
                 if (data.status === 'success') {
                     alert('Profile photo updated successfully!');
+                    // Upload the photo into the /uploads directory
                     document.getElementById('child-profile-photo').src = `./uploads/children/${data.photo}`;
                 } else {
                     console.error('Error updating profile photo:', data.message);
@@ -804,6 +798,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 galleryContainer.innerHTML = '';
                 if (data.photos && data.photos.length > 0) {
                     data.photos.forEach((photo) => {
+                        // Each photo that is found is loaded from the /uploads directory
                         const img = document.createElement('img');
                         img.src = `../uploads/children/${photo.photo}`;
                         img.alt = `Uploaded on ${photo.uploaded_at}`;
@@ -1429,11 +1424,46 @@ function createSleepInputs(form) {
     sleepStartButton.textContent = 'Start Sleep';
     sleepStartButton.addEventListener('click', () => {
         const now = new Date();
-        const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:mm (24-hour format)
-        sleepStartTime.value = timeString;
+        const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:MM
 
-        // Auto-submit sleep start
-        submitForm(form, 'sleep');
+        // Check for ongoing sleep session
+        fetch(`../api/sleep.php?child_id=${form.dataset.childId}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.sleep && data.sleep.some(entry => !entry.sleep_end)) {
+                    alert('A sleep session is already in progress. Please end it before starting a new one.');
+                    return;
+                }
+
+                // Clear the sleep_end field and populate the sleep_start field
+                sleepEndTime.value = ''; // Clear previous end time
+                sleepStartTime.value = timeString;
+
+                // Auto-submit sleep start
+                const formData = new FormData();
+                formData.append('child_id', form.dataset.childId);
+                formData.append('sleep_start', timeString);
+
+                fetch('../api/sleep.php', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData,
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.status === 'success') {
+                            alert('Sleep start logged successfully.');
+                        } else {
+                            console.error('Error logging sleep start:', data.message);
+                            alert('Failed to log sleep start.');
+                        }
+                    })
+                    .catch((error) => console.error('Error logging sleep start:', error));
+            })
+            .catch((error) => console.error('Error checking ongoing sleep session:', error));
     });
     sleepStartRow.appendChild(sleepStartButton);
 
@@ -1457,16 +1487,53 @@ function createSleepInputs(form) {
     sleepEndButton.type = 'button';
     sleepEndButton.textContent = 'End Sleep';
     sleepEndButton.addEventListener('click', () => {
-        const now = new Date();
-        const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:mm (24-hour format)
-        sleepEndTime.value = timeString;
+        const childId = form.dataset.childId;
 
-        // Auto-submit sleep end
-        submitForm(form, 'sleep');
+        // Check if a sleep entry exists for today with a start time and no end time
+        fetch(`../api/sleep.php?child_id=${childId}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.sleep && data.sleep.some(entry => !entry.sleep_end)) {
+                    // If there's an ongoing entry, log the end time
+                    const now = new Date();
+                    const timeString = now.toTimeString().split(' ')[0].substring(0, 5); // Format HH:MM
+                    sleepEndTime.value = timeString;
+
+                    // Auto-submit sleep end
+                    const formData = new FormData();
+                    formData.append('child_id', childId);
+                    formData.append('sleep_end', timeString);
+
+                    fetch('../api/sleep.php', {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` },
+                        body: formData,
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.status === 'success') {
+                                alert('Sleep end logged successfully.');
+                            } else {
+                                console.error('Error logging sleep end:', data.message);
+                                alert('Failed to log sleep end.');
+                            }
+                        })
+                        .catch((error) => console.error('Error logging sleep end:', error));
+                } else {
+                    // No ongoing entry, show an alert
+                    alert('No ongoing sleep session found. Please start a sleep session first.');
+                }
+            })
+            .catch((error) => console.error('Error checking sleep session status:', error));
     });
+
     sleepEndRow.appendChild(sleepEndButton);
 
     sleepSection.appendChild(sleepEndRow);
+
 
     // Pre-populate fields if sleep data exists
     fetch(`../api/sleep.php?child_id=${form.dataset.childId}`, {
@@ -1846,6 +1913,7 @@ function createSleepInputs(form) {
                 dietList.innerHTML = '';
                 if (data.summary.length > 0) {
                     data.summary.forEach((entry) => {
+                        // Show the data as a List
                         const li = document.createElement('li');
                         li.textContent = `${entry.meal_type}: ${entry.total_entries} entries`;
                         dietList.appendChild(li);
@@ -2107,7 +2175,7 @@ function createSleepInputs(form) {
         modal.style.display = 'none';
     }
     
-    // Switch between chat sections (Room Chat or Private Chat)
+    // Switch between chat sections
     function showChatSection(section) {
         document.querySelectorAll('.chat-section').forEach((sec) => {
             sec.style.display = 'none';

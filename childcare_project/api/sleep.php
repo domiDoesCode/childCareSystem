@@ -36,42 +36,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sleepStart = $sleepStart ? date('Y-m-d H:i:s', strtotime($sleepStart)) : null;
         $sleepEnd = $sleepEnd ? date('Y-m-d H:i:s', strtotime($sleepEnd)) : null;
 
-        // Check if an entry exists for today
-        $stmt = $conn->prepare("
-            SELECT id FROM sleeping_entries 
-            WHERE child_id = ? AND DATE(sleep_start) = CURDATE()
-        ");
-        $stmt->bind_param('i', $childId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        if ($sleepEnd) {
+            // Update sleep_end if a matching sleep_start exists
+            $stmt = $conn->prepare("
+                SELECT id FROM sleeping_entries
+                WHERE child_id = ? AND sleep_end IS NULL AND DATE(sleep_start) = CURDATE()
+            ");
+            $stmt->bind_param('i', $childId);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-        if ($result->num_rows > 0) {
-            // Update existing entry
-            $sleepEntryId = $result->fetch_assoc()['id'];
+            if ($result->num_rows > 0) {
+                $sleepEntryId = $result->fetch_assoc()['id'];
+                $stmt = $conn->prepare("
+                    UPDATE sleeping_entries
+                    SET 
+                        sleep_end = ?,
+                        duration = TIMESTAMPDIFF(MINUTE, sleep_start, ?)
+                    WHERE id = ?
+                ");
+                $stmt->bind_param('ssi', $sleepEnd, $sleepEnd, $sleepEntryId);
+            } else {
+                // Prevent logging sleep_end without a matching sleep_start
+                http_response_code(400);
+                echo json_encode(['error' => 'No matching sleep start found for today.']);
+                exit;
+            }
+        } elseif ($sleepStart) {
+            // Check for ongoing sleep entry (sleep_start without sleep_end)
             $stmt = $conn->prepare("
-                UPDATE sleeping_entries 
-                SET 
-                    sleep_start = COALESCE(?, sleep_start),
-                    sleep_end = COALESCE(?, sleep_end),
-                    duration = CASE
-                        WHEN sleep_start IS NOT NULL AND COALESCE(?, sleep_end) IS NOT NULL
-                        THEN TIMESTAMPDIFF(MINUTE, sleep_start, COALESCE(?, sleep_end))
-                        ELSE NULL
-                    END
-                WHERE id = ?
+            SELECT id FROM sleeping_entries
+            WHERE child_id = ? AND sleep_end IS NULL AND DATE(sleep_start) = CURDATE()
             ");
-            $stmt->bind_param('sssii', $sleepStart, $sleepEnd, $sleepEnd, $sleepEnd, $sleepEntryId);
-        } else {
-            // Insert a new entry
+            $stmt->bind_param('i', $childId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                // Ongoing sleep entry exists, prevent starting a new one
+                http_response_code(400);
+                echo json_encode(['error' => 'A sleep session is already in progress. Please end it before starting a new one.']);
+                exit;
+            }
+
+            // Insert a new entry for sleep_start
             $stmt = $conn->prepare("
-                INSERT INTO sleeping_entries (child_id, sleep_start, sleep_end, duration) 
-                VALUES (?, ?, ?, CASE
-                    WHEN ? IS NOT NULL AND ? IS NOT NULL
-                    THEN TIMESTAMPDIFF(MINUTE, ?, ?)
-                    ELSE NULL
-                END)
+                INSERT INTO sleeping_entries (child_id, sleep_start)
+                VALUES (?, ?)
             ");
-            $stmt->bind_param('issssss', $childId, $sleepStart, $sleepEnd, $sleepStart, $sleepEnd, $sleepStart, $sleepEnd);
+            $stmt->bind_param('is', $childId, $sleepStart);
         }
 
         if ($stmt->execute()) {

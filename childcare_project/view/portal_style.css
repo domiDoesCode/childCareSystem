@@ -1,8 +1,9 @@
 /* General styling for the body */
 body {
+    background-color: #9dcaa774;
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
+    /* background-color: #f8f9fa; */
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -73,36 +74,41 @@ body {
     width: 100%;
     max-width: 800px;
     background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    padding: 20px;
-    margin-top: 20px;
-    /* height: 100vh; */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Modern shadow */
+    border-radius: 16px;
+    padding: 30px; /* Increased padding for cleaner look */
+    margin-top: 30px;
     display: flex;
+    flex-direction: column;
+    gap: 20px; /* Modern spacing */
 }
 
 #data-section h2 {
-    font-size: 20px;
-    color: #333;
-    margin-bottom: 20px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #222;
     text-align: center;
 }
 
 /* Back buttons */
 #back-to-rooms, #back-to-children, #back-to-child-cards {
-    background-color: #e6bbad;
+    background-color: #92be9d;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
+    margin: 10px;
     font-size: 14px;
-    border-radius: 5px;
+    font-weight: 500;
+    border-radius: 8px;
     cursor: pointer;
-    margin-bottom: 20px;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    align-self: center; /* Centering button */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #back-to-rooms:hover, #back-to-children:hover, #back-to-child-cards:hover {
     background-color: #d99c8a;
+    transform: translateY(-3px); /* Subtle lift on hover */
 }
 
 /* -------------------------------------------------------------- */
@@ -123,32 +129,42 @@ body {
 
 .menu_section button:hover {
     background-color: #cce7ff;
+    color: #6d94b7;
 }
 
 /* -------------------------------------------------------------- */
 /* Children Data section */
 /* -------------------------------------------------------------- */
 
-#children-list {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    padding: 0;
-    margin: 20px 0;
+.child-card {
+    background-color: #ffffff;
+    border: none;
+    border-radius: 16px; /* Softer corners */
+    padding: 24px;
+    margin: 5px;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1); /* Modern shadow */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    text-align: left;
+    font-size: 16px;
 }
 
-/* Each child item as a card */
-.child-card {
-    background-color: #ffffff; /* White background for the card */
-    border: 1px solid #ddd; /* Light border for the card */
-    border-radius: 8px; /* Rounded corners */
-    padding: 20px; /* Space inside the card */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    transition: transform 0.2s, box-shadow 0.2s;
-    cursor: pointer; /* Pointer cursor on hover */
-    text-align: left; /* Align text to the left */
-    font-size: 16px; /* Font size for readability */
+.child-card:hover {
+    transform: translateY(-5px); /* Lift effect */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+}
+
+/* Modernized child card details */
+.child-card .child-name {
+    font-weight: 600;
+    font-size: 18px;
+    color: #222;
+}
+
+.child-card .child-details {
+    color: #555;
+    font-size: 14px;
+    margin-top: 8px;
 }
 
 .child-card.absent {
@@ -157,25 +173,6 @@ body {
     border: 1px solid #f5c6cb; /* Red border */
 }
 
-/* Hover effect for child cards */
-.child-card:hover {
-    transform: scale(1.03); /* Slight zoom effect on hover */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
-}
-
-/* Child name */
-.child-card .child-name {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: #333; /* Dark text color */
-}
-
-/* Additional child details (if any) */
-.child-card .child-details {
-    color: #555; /* Subtle text color for details */
-    font-size: 14px;
-}
 
 
 /* -------------------------------------------------------------- */
@@ -199,26 +196,27 @@ body {
 .modal textarea,
 .modal select {
     width: 100%;
-    padding: 8px;
+    padding: 12px;
     margin-bottom: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 6px;
     box-sizing: border-box;
     font-size: 14px;
 }
 
 .modal button {
-    background-color: #e6bbad;
+    background-color: #92be9d;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    padding: 8px;
+    padding: 10px 22px;
     font-size: 14px;
 }
 
 .modal button:hover {
     background-color: #d99c8a;
+    transform: translateY(-3px); /* Subtle lift effect */
 }
 
 .modal-content {
@@ -257,7 +255,7 @@ body {
     padding: 15px;
     border: 1px solid #ddd;
     border-radius: 8px;
-    background-color: #f9f9f9;
+    background-color: #92be9d18;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -286,7 +284,7 @@ body {
 .symptoms-container {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
 .food-items-container select,
@@ -300,7 +298,7 @@ body {
 .activities-container button,
 .medications-container button,
 .symptoms-container button {
-    background-color: #e6bbad;
+    background-color: #92be9d;
     color: white;
     border: none;
     border-radius: 4px;
@@ -314,13 +312,15 @@ body {
 .medications-container button:hover,
 .symptoms-container button:hover {
     background-color: #d99c8a;
+    transform: translateY(-2px); /* Subtle lift effect */
 }
 
 .child-card button {
-    background-color: #e6bbad;
+    background-color: #92be9d;
     color: white;
     border: none;
     padding: 10px 15px;
+    margin: 5px;
     font-size: 14px;
     border-radius: 4px;
     cursor: pointer;
@@ -329,16 +329,17 @@ body {
 
 .child-card button:hover {
     background-color: #d99c8a;
+    transform: translateY(-2px); /* Subtle lift effect */
 }
 
 /* History preview styling */
 .history-preview {
     margin-top: 10px;
-    padding: 10px;
+    padding: 12px;
     background-color: #f1f1f1;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 12px;
-    color: #555;
+    color: #313131;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -351,7 +352,7 @@ input:focus, select:focus, textarea:focus {
 /* -------------------------------------------------------------- */
 
 #view-dashboard-button {
-    background-color: #d4edda; /* Light green */
+    background-color: #92be9d; /* Light green */
     border: 1px solid #c3e6cb;
     color: #155724;
     font-weight: bold;
@@ -388,7 +389,7 @@ input:focus, select:focus, textarea:focus {
     margin-top: 10px;
     background-color: #f9f9f9;
     display: flex;
-    gap: 10px;
+    gap: 5px;
     align-items: center;
 }
 

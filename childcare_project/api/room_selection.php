@@ -24,7 +24,7 @@ if (!$decoded) {
 }
 
 // Retrieve rooms from the decoded JWT payload
-$rooms = $decoded['rooms']; // Assumes JWT payload includes a 'rooms' key with accessible room IDs
+$rooms = $decoded['rooms']; // JWT payload includes 'rooms' key with accessible room IDs
 
 if (is_array($rooms) && count($rooms) > 0) {
     // Prepare SQL to select only rooms user has access to
@@ -41,7 +41,7 @@ if (is_array($rooms) && count($rooms) > 0) {
 
     echo json_encode(['rooms' => $roomList]);
 } else {
-    echo json_encode(['rooms' => []]); // No rooms available for user
+    echo json_encode(['rooms' => []]); // If no rooms available for user
 }
 
 $conn->close();

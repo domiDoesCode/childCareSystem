@@ -3,13 +3,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const loginForm = document.getElementById('login_form');
     const registerButton = document.getElementById("register_button");
 
-    // Handle "Go Back" button click to redirect to index.html
+    // Redirect to index.html
     backButton.addEventListener("click", function() {
         window.location.href = 'index.html';
     });
 
     registerButton.addEventListener("click", function() {
-        window.location.href = 'register.html'; // Redirect to the login page
+        window.location.href = 'register.html'; // Redirect to the Register page
     });
 
     // Function to validate JWT on page load

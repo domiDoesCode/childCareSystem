@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const formData = new FormData(registerForm);
         
         // Make an AJAX request using Fetch API
-        fetch('../api/register.php', {  // Make sure this points to the correct PHP file
+        fetch('../api/register.php', { 
             method: 'POST',
             body: formData
         })
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return response.json();  // Parse the JSON response
+            return response.json();
         })
         .then(data => {
             if (data.success) {

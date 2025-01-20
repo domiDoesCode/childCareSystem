@@ -25,7 +25,7 @@ $userId = $decoded['userId'];
 $roleId = $decoded['role'];
 
 try {
-    // Fetch a specific child by ID (e.g., for profile)
+    // Fetch a specific child by ID 
     if (isset($_GET['child_id'])) {
         $childId = (int)$_GET['child_id'];
         

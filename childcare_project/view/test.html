@@ -1,0 +1,214 @@
+<script>
+    // --- Mocking Functions ---
+    
+    // Mock for checking user role
+    function checkUserRole(role, action) {
+        return role === 1 || role === 2;  // Simulate authorized users
+    }
+    
+    // Mock for showing loading spinner
+    function showLoadingSpinner() {
+        console.log("Loading spinner shown");
+    }
+    
+    // Mock for hiding loading spinner
+    function hideLoadingSpinner() {
+        console.log("Loading spinner hidden");
+    }
+    
+    // Mocking the fetch API (simulating success)
+    function mockFetch(url, options) {
+        console.log(`Mock fetch for ${url} with options`, options);
+        return new Promise((resolve) => {
+            // Simulate a successful response
+            setTimeout(() => {
+                resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ status: 'success' }), // Ensure status is 'success'
+                });
+            }, 100); // Simulate a delay to mimic real-world API
+        });
+    }
+    
+    // --- The Function to Test ---
+    function submitForm(form, section) {
+        if (!checkUserRole(1, 'submit this form') && !checkUserRole(2, 'submit this form')) return;
+    
+        const childId = form.dataset.childId;
+        if (!childId) {
+            console.error('Child ID is missing in the form dataset.');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('child_id', childId);
+    
+        if (section === 'diet') {
+            const mealType = form.querySelector('[name="meal_type"]').value;
+            const foodItems = Array.from(form.querySelector('[name="food_items[]"]').selectedOptions).map(opt => opt.value);
+            if (!mealType || foodItems.length === 0) {
+                alert('Please select a meal type and at least one food item.');
+                return;
+            }
+            formData.append('meal_type_id', mealType);
+            foodItems.forEach(item => formData.append('food_item_ids[]', item));
+        }
+    
+        console.log('Submitting the following data:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+    
+        showLoadingSpinner();  // Show spinner
+    
+        // Simulate API call using our mock fetch function
+        mockFetch(`../api/${section}.php?child_id=${childId}`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer fakeToken`,
+            },
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === 'success') {
+                    alert(`${section.charAt(0).toUpperCase() + section.slice(1)} entry added successfully!`);
+                } else {
+                    alert(`Error: ${data.error}`);
+                    console.error(data.error);
+                }
+            })
+            .catch((error) => console.error(`Error submitting ${section} data:`, error))
+            .finally(() => {
+                hideLoadingSpinner();  // Hide spinner
+            });
+    }
+    
+    // --- Unit Tests ---
+    
+    function testSubmitFormWithValidData() {
+        console.log("Running testSubmitFormWithValidData...");
+        const form = document.createElement('form');
+        form.dataset.childId = "123";
+        form.innerHTML = `
+            <input name="meal_type" value="1" />
+            <select name="food_items[]" multiple>
+                <option value="1" selected>Food 1</option>
+                <option value="2" selected>Food 2</option>
+            </select>
+        `;
+        
+        const alert = spyAlert();
+    
+        submitForm(form, 'diet');
+    
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log("Alert spy calls:", alert.calls);
+                console.assert(
+                    alert.calls.includes('Diet entry added successfully!')
+                );
+    
+                alert.restore();
+                console.log("Assertions passed for testSubmitFormWithValidData.");
+                resolve();
+            }, 200);
+        });
+    }
+    
+    function testSubmitFormWithMissingMealType() {
+        console.log("Running testSubmitFormWithMissingMealType...");
+        const form = document.createElement('form');
+        form.dataset.childId = "123";
+        form.innerHTML = `
+            <input name="meal_type" value="" />
+            <select name="food_items[]" multiple>
+                <option value="1" selected>Food 1</option>
+            </select>
+        `;
+    
+        const alert = spyAlert();
+    
+        submitForm(form, 'diet');
+    
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log("Alert spy calls:", alert.calls);
+                console.assert(
+                    alert.calls.includes('Please select a meal type and at least one food item.')
+                );
+    
+                alert.restore();
+                console.log("Assertions passed for testSubmitFormWithMissingMealType.");
+                resolve();
+            }, 200);
+        });
+    }
+    
+    function testSubmitFormWithoutChildId() {
+        console.log("Running testSubmitFormWithoutChildId...");
+        const form = document.createElement('form');
+        form.dataset.childId = ""; // Missing child ID
+    
+        const consoleError = spyError();
+    
+        submitForm(form, 'diet');
+    
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log("Console error spy calls:", consoleError.calls);
+                console.assert(
+                    consoleError.calls.includes('Child ID is missing in the form dataset.')
+                );
+    
+                consoleError.restore();
+                console.log("Assertions passed for testSubmitFormWithoutChildId.");
+                resolve();
+            }, 200);
+        });
+    }
+    
+    // --- Sequential Test Execution ---
+    function runTestsSequentially() {
+        testSubmitFormWithValidData()
+            .then(testSubmitFormWithMissingMealType)
+            .then(testSubmitFormWithoutChildId)
+            .then(() => console.log("All tests completed successfully."));
+    }
+    
+    // --- Helper Functions ---
+    
+    // Manual spy on alert function
+    function spyAlert() {
+        const originalAlert = window.alert;
+        const calls = [];
+        window.alert = function(message) {
+            calls.push(message); // Capture alert message
+        };
+        return {
+            calls,
+            restore: () => {
+                window.alert = originalAlert; // Restore original alert function
+            }
+        };
+    }
+    
+    // Manual spy on console.error function
+    function spyError() {
+        const originalConsoleError = console.error;
+        const calls = [];
+        console.error = function(message) {
+            calls.push(message); // Capture error message
+        };
+        return {
+            calls,
+            restore: () => {
+                console.error = originalConsoleError; // Restore original console.error function
+            }
+        };
+    }
+    
+    // --- Run All Tests Sequentially ---
+    runTestsSequentially();
+    
+    </script>
+    

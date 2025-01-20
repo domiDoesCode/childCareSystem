@@ -1,16 +1,15 @@
 <?php
 session_start();
-include '../config/db.php';  // Ensure correct path to the database connection
+include '../config/db.php';
 
-header('Content-Type: application/json'); // Set header for JSON output
+header('Content-Type: application/json'); // header for JSON output
 
-// Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
     $defaultRole = 3;  // Default role is 'parent'
 
-    // Ensure the database connection is still open
+    // Connection check
     if ($conn->connect_error) {
         echo json_encode(['success' => false, 'message' => 'Database connection failed']);
         exit;
@@ -32,7 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Bind the parameters and execute
     $stmt->bind_param("ssi", $email, $hashedPassword, $defaultRole);
     if ($stmt->execute()) {
-        // User registration successful, create session and cookie
 
         // Fetch the newly created user's ID
         $userId = $stmt->insert_id;

@@ -100,7 +100,7 @@ body {
 }
 
 .home_image_container {
-    background-color: #f0f0f0;
+    background-color: #ffffff;
     min-height: 500px;
     display: flex;
     justify-content: center;
@@ -109,6 +109,7 @@ body {
 
 .home_image_container img {
     max-width: 100%; /* Ensure image scales properly */
+    object-fit: fill;
     height: auto;
 }
 
